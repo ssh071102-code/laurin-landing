@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Laurin Lin — AI Integration & Automation Engineer</title>
+<meta name="description" content="Freelance engineer building AI integrations, LLM/agent systems, workflow automation, and AI-video pipelines. Melbourne, Australia · remote." />
+<meta name="author" content="Laurin Lin" />
+<meta property="og:title" content="Laurin Lin — AI Integration & Automation Engineer" />
+<meta property="og:description" content="I ship working AI systems, not slides. Melbourne · remote." />
+<meta property="og:type" content="website" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230b1220'/%3E%3Ctext x='50' y='68' font-size='58' text-anchor='middle' fill='%237cc4ff' font-family='Georgia,serif'%3EL%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0b1220; --ink-soft:#334155; --line:#e6eaf0;
+    --bg:#ffffff; --bg-soft:#f7f9fc; --accent:#1f6feb; --accent-ink:#0b3ea8;
+    --max:1080px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Jost",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    font-weight:400; line-height:1.65; -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent); text-decoration:none}
+  a:hover{color:var(--accent-ink)}
+  .wrap{max-width:var(--max); margin:0 auto; padding:0 24px}
+  h1,h2,h3{font-family:"Cormorant Garamond",Georgia,serif; font-weight:600; line-height:1.15; letter-spacing:.2px; margin:0}
+
+  /* nav */
+  header{position:sticky; top:0; z-index:10; background:rgba(255,255,255,.86); backdrop-filter:saturate(150%) blur(8px); border-bottom:1px solid var(--line)}
+  nav{display:flex; align-items:center; justify-content:space-between; height:64px}
+  .brand{font-family:"Cormorant Garamond",serif; font-size:24px; font-weight:600; color:var(--ink)}
+  .brand span{color:var(--accent)}
+  .navlinks{display:flex; gap:26px; font-size:15px}
+  .navlinks a{color:var(--ink-soft)}
+  .navlinks a:hover{color:var(--ink)}
+  @media(max-width:640px){ .navlinks{display:none} }
+
+  /* hero */
+  .hero{padding:96px 0 72px}
+  .kicker{font-size:13px; letter-spacing:.18em; text-transform:uppercase; color:var(--accent-ink); font-weight:600}
+  .hero h1{font-size:clamp(40px,7vw,72px); margin:14px 0 18px}
+  .lead{font-size:clamp(18px,2.4vw,22px); color:var(--ink-soft); max-width:640px}
+  .cta{margin-top:34px; display:flex; gap:14px; flex-wrap:wrap}
+  .btn{display:inline-block; padding:13px 24px; border-radius:999px; font-weight:500; font-size:15px}
+  .btn-primary{background:var(--ink); color:#fff}
+  .btn-primary:hover{background:#111a2e; color:#fff}
+  .btn-ghost{border:1px solid var(--line); color:var(--ink)}
+  .btn-ghost:hover{border-color:var(--ink)}
+
+  /* sections */
+  section{padding:72px 0; border-top:1px solid var(--line)}
+  .eyebrow{font-size:13px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent-ink); font-weight:600; margin-bottom:12px}
+  .sec-title{font-size:clamp(28px,4vw,40px); margin-bottom:28px}
+
+  .grid{display:grid; grid-template-columns:repeat(2,1fr); gap:22px}
+  @media(max-width:720px){ .grid{grid-template-columns:1fr} }
+  .card{border:1px solid var(--line); border-radius:16px; padding:26px; background:var(--bg-soft); transition:transform .15s ease,box-shadow .15s ease}
+  .card:hover{transform:translateY(-3px); box-shadow:0 12px 30px -18px rgba(11,18,32,.4)}
+  .card h3{font-size:24px; margin-bottom:8px}
+  .card p{margin:0; color:var(--ink-soft); font-size:15.5px}
+
+  .work{display:grid; grid-template-columns:repeat(2,1fr); gap:18px}
+  @media(max-width:720px){ .work{grid-template-columns:1fr} }
+  .repo{display:block; border:1px solid var(--line); border-radius:14px; padding:20px 22px; background:#fff}
+  .repo:hover{border-color:var(--accent)}
+  .repo .name{font-weight:600; color:var(--ink); font-size:16px}
+  .repo .desc{color:var(--ink-soft); font-size:14.5px; margin-top:4px}
+  .repo .tag{display:inline-block; margin-top:12px; font-size:12px; letter-spacing:.04em; color:var(--accent-ink); background:#eaf1ff; padding:3px 10px; border-radius:999px}
+
+  /* contact */
+  .contact-grid{display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:start}
+  @media(max-width:720px){ .contact-grid{grid-template-columns:1fr; gap:28px} }
+  form{display:flex; flex-direction:column; gap:14px}
+  label{font-size:14px; color:var(--ink-soft)}
+  input,textarea{font-family:inherit; font-size:15px; padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink)}
+  input:focus,textarea:focus{outline:none; border-color:var(--accent)}
+  .hp{position:absolute; left:-9999px}  /* honeypot: hidden from humans, catches bots */
+  button[type=submit]{align-self:flex-start; padding:13px 26px; border:0; border-radius:999px; background:var(--ink); color:#fff; font-weight:500; font-size:15px; cursor:pointer}
+  button[type=submit]:hover{background:#111a2e}
+
+  footer{padding:40px 0 56px; color:var(--ink-soft); font-size:14px; border-top:1px solid var(--line)}
+  .foot{display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px}
+</style>
+</head>
+<body>
+
+<header>
+  <nav class="wrap">
+    <div class="brand">Laurin<span>.</span></div>
+    <div class="navlinks">
+      <a href="#work">Work</a>
+      <a href="#services">Services</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <section class="hero" style="border-top:0">
+    <div class="wrap">
+      <div class="kicker">Melbourne, Australia · Remote</div>
+      <h1>I build AI systems<br/>that actually ship.</h1>
+      <p class="lead">Freelance engineer working on AI integrations, LLM and agent systems, workflow automation, and AI-video pipelines. End to end, tested, and running — not slideware.</p>
+      <div class="cta">
+        <a class="btn btn-primary" href="#contact">Start a project</a>
+        <a class="btn btn-ghost" href="#work">See the code</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="services">
+    <div class="wrap">
+      <div class="eyebrow">What I do</div>
+      <h2 class="sec-title">Services</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>AI &amp; LLM integration</h3>
+          <p>Wire Claude, GPT, or Gemini into your product — chatbots, agents, RAG over your docs, structured output, tool use, cost control.</p>
+        </div>
+        <div class="card">
+          <h3>Workflow automation</h3>
+          <p>Turn a manual process into an unattended pipeline: ingest, LLM logic, and delivery, with graceful failure handling and clean logs.</p>
+        </div>
+        <div class="card">
+          <h3>AI-video automation</h3>
+          <p>Auto-editing and generation pipelines for short-form video — cuts, hooks, captions, pacing — no manual edit per clip.</p>
+        </div>
+        <div class="card">
+          <h3>Sites &amp; deployment</h3>
+          <p>Static sites deployed cleanly on Netlify or Vercel, with HTTPS, forms, fonts, SEO, and end-to-end testing before handoff.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="work">
+    <div class="wrap">
+      <div class="eyebrow">Selected work · open source</div>
+      <h2 class="sec-title">Things I've built</h2>
+      <div class="work">
+        <a class="repo" href="https://github.com/ssh071102-code/gig-radar" target="_blank" rel="noopener">
+          <div class="name">gig-radar</div>
+          <div class="desc">Automated lead-gen pipeline: pulls listings, scores each with an LLM, drafts tailored proposals.</div>
+          <span class="tag">Python · LLM · automation</span>
+        </a>
+        <a class="repo" href="https://github.com/ssh071102-code/ai-council" target="_blank" rel="noopener">
+          <div class="name">ai-council</div>
+          <div class="desc">Multi-LLM consensus framework — voters deliberate in parallel with weighted voting and veto rules.</div>
+          <span class="tag">Python · async</span>
+        </a>
+        <a class="repo" href="https://github.com/ssh071102-code/prompt-forge" target="_blank" rel="noopener">
+          <div class="name">prompt-forge</div>
+          <div class="desc">Iterative prompt optimizer that hill-climbs a prompt against labeled examples and keeps only real gains.</div>
+          <span class="tag">Python · LLM</span>
+        </a>
+        <a class="repo" href="https://github.com/ssh071102-code/claude-screen-mcp" target="_blank" rel="noopener">
+          <div class="name">claude-screen-mcp</div>
+          <div class="desc">Read-only MCP server exposing screenshots, OCR, and change detection to AI agents.</div>
+          <span class="tag">TypeScript · MCP</span>
+        </a>
+      </div>
+      <p style="margin-top:22px;color:var(--ink-soft);font-size:15px">More on <a href="https://github.com/ssh071102-code" target="_blank" rel="noopener">github.com/ssh071102-code</a>.</p>
+    </div>
+  </section>
+
+  <section id="contact">
+    <div class="wrap">
+      <div class="contact-grid">
+        <div>
+          <div class="eyebrow">Contact</div>
+          <h2 class="sec-title">Let's build something.</h2>
+          <p style="color:var(--ink-soft);max-width:420px">Tell me what you're trying to ship. I reply within a day, and I'm happy to start with a small fixed-scope pilot so you can see the work risk-free.</p>
+        </div>
+        <!-- Netlify-style form: name attr + honeypot demonstrate the exact contact-form setup a static host uses -->
+        <form name="contact" method="POST" netlify-honeypot="bot-field" data-netlify="true" onsubmit="event.preventDefault(); this.reset(); document.getElementById('sent').style.display='block';">
+          <p class="hp"><label>Don't fill this out: <input name="bot-field" tabindex="-1" autocomplete="off" /></label></p>
+          <div>
+            <label for="n">Name</label><br/>
+            <input id="n" name="name" required style="width:100%" />
+          </div>
+          <div>
+            <label for="e">Email</label><br/>
+            <input id="e" type="email" name="email" required style="width:100%" />
+          </div>
+          <div>
+            <label for="m">What do you need?</label><br/>
+            <textarea id="m" name="message" rows="4" required style="width:100%"></textarea>
+          </div>
+          <button type="submit">Send message</button>
+          <p id="sent" style="display:none;color:#15803d;font-size:14px;margin:0">Thanks — this is a demo form. On a live site the message lands straight in the owner's inbox.</p>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div>© 2026 Laurin Lin · AI Integration &amp; Automation Engineer</div>
+    <div><a href="https://github.com/ssh071102-code" target="_blank" rel="noopener">GitHub</a></div>
+  </div>
+</footer>
+
+</body>
+</html>
