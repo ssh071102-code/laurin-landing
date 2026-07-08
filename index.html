@@ -9,6 +9,9 @@
 <meta property="og:title" content="Laurin Lin — AI Integration & Automation Engineer" />
 <meta property="og:description" content="I ship working AI systems, not slides. Melbourne · remote." />
 <meta property="og:type" content="website" />
+<meta property="og:url" content="https://ssh071102-code.github.io/laurin-landing/" />
+<meta name="theme-color" content="#0b1220" />
+<link rel="canonical" href="https://ssh071102-code.github.io/laurin-landing/" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230b1220'/%3E%3Ctext x='50' y='68' font-size='58' text-anchor='middle' fill='%237cc4ff' font-family='Georgia,serif'%3EL%3C/text%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -39,7 +42,11 @@
   .navlinks{display:flex; gap:26px; font-size:15px}
   .navlinks a{color:var(--ink-soft)}
   .navlinks a:hover{color:var(--ink)}
-  @media(max-width:640px){ .navlinks{display:none} }
+  @media(max-width:560px){ .navlinks{gap:16px; font-size:14px} .brand{font-size:21px} }
+  /* keyboard accessibility: clear focus ring + skip link */
+  a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .skip{position:absolute; left:-9999px; top:0; background:var(--ink); color:#fff; padding:10px 16px; border-radius:0 0 8px 0; z-index:20}
+  .skip:focus{left:0; color:#fff}
 
   /* hero */
   .hero{padding:96px 0 72px}
@@ -89,6 +96,7 @@
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 
 <header>
   <nav class="wrap">
@@ -101,7 +109,7 @@
   </nav>
 </header>
 
-<main>
+<main id="main">
   <section class="hero" style="border-top:0">
     <div class="wrap">
       <div class="kicker">Melbourne, Australia · Remote</div>
@@ -177,9 +185,10 @@
           <h2 class="sec-title">Let's build something.</h2>
           <p style="color:var(--ink-soft);max-width:420px">Tell me what you're trying to ship. I reply within a day, and I'm happy to start with a small fixed-scope pilot so you can see the work risk-free.</p>
         </div>
-        <!-- Netlify-style form: name attr + honeypot demonstrate the exact contact-form setup a static host uses -->
-        <form name="contact" method="POST" netlify-honeypot="bot-field" data-netlify="true" onsubmit="event.preventDefault(); this.reset(); document.getElementById('sent').style.display='block';">
-          <p class="hp"><label>Don't fill this out: <input name="bot-field" tabindex="-1" autocomplete="off" /></label></p>
+        <!-- Static-host contact form: honeypot + a real endpoint (Formspree/Netlify Forms) on the live site.
+             Here it runs as a front-end demo; swap the action for a Formspree endpoint to make it live. -->
+        <form name="contact" onsubmit="event.preventDefault(); this.reset(); document.getElementById('sent').style.display='block';" aria-label="Contact (demo)">
+          <p class="hp" aria-hidden="true"><label>Leave this empty: <input name="bot-field" tabindex="-1" autocomplete="off" /></label></p>
           <div>
             <label for="n">Name</label><br/>
             <input id="n" name="name" required style="width:100%" />
