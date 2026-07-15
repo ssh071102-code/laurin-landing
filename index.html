@@ -191,9 +191,11 @@
           <h2 class="sec-title">Let's build something.</h2>
           <p style="color:var(--ink-soft);max-width:420px">Tell me what you're trying to ship. I reply within a day, and I'm happy to start with a small fixed-scope pilot so you can see the work risk-free.</p>
         </div>
-        <!-- Static-host contact form: honeypot + a real endpoint (Formspree/Netlify Forms) on the live site.
-             Here it runs as a front-end demo; swap the action for a Formspree endpoint to make it live. -->
-        <form name="contact" onsubmit="event.preventDefault(); this.reset(); document.getElementById('sent').style.display='block';" aria-label="Contact (demo)">
+        <!-- Web3Forms backend: the access_key is a public client-side id; the destination inbox stays server-side. -->
+        <form name="contact" action="https://api.web3forms.com/submit" method="POST" aria-label="Contact">
+          <input type="hidden" name="access_key" value="8bc2a69f-f56f-49d5-8cdb-4200bfd2b05f" />
+          <input type="hidden" name="subject" value="New inquiry from laurin-landing" />
+          <input type="checkbox" name="botcheck" class="hp" style="display:none" tabindex="-1" aria-hidden="true" />
           <p class="hp" aria-hidden="true"><label>Leave this empty: <input name="bot-field" tabindex="-1" autocomplete="off" /></label></p>
           <div>
             <label for="n">Name</label><br/>
@@ -208,8 +210,26 @@
             <textarea id="m" name="message" rows="4" required style="width:100%"></textarea>
           </div>
           <button type="submit">Send message</button>
-          <p id="sent" style="display:none;color:#15803d;font-size:14px;margin:0">Thanks — this is a demo form. On a live site the message lands straight in the owner's inbox.</p>
+          <p id="sent" style="display:none;color:#15803d;font-size:14px;margin:0">Thanks — your message is on its way. I usually reply within a day.</p>
+          <p id="senderr" style="display:none;color:#b91c1c;font-size:14px;margin:0">Something went wrong sending your message. Please email me via GitHub instead.</p>
         </form>
+        <script>
+          document.forms.contact.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var form = this, btn = form.querySelector('button[type=submit]');
+            btn.disabled = true;
+            document.getElementById('senderr').style.display = 'none';
+            fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } })
+              .then(function (r) { return r.json(); })
+              .then(function (d) {
+                if (!d.success) throw new Error(d.message);
+                form.reset();
+                document.getElementById('sent').style.display = 'block';
+              })
+              .catch(function () { document.getElementById('senderr').style.display = 'block'; })
+              .finally(function () { btn.disabled = false; });
+          });
+        </script>
       </div>
     </div>
   </section>
