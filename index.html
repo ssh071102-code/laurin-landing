@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Laurin Lin — AI Integration & Automation Engineer</title>
+<title>Laurin Lin — AI Integration &amp; Automation Engineer</title>
 <meta name="description" content="Freelance engineer building AI integrations, LLM/agent systems, workflow automation, and AI-video pipelines. Melbourne, Australia · remote." />
 <meta name="author" content="Laurin Lin" />
 <meta property="og:title" content="Laurin Lin — AI Integration & Automation Engineer" />
@@ -21,84 +21,226 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230b1220'/%3E%3Ctext x='50' y='68' font-size='58' text-anchor='middle' fill='%237cc4ff' font-family='Georgia,serif'%3EL%3C/text%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=IBM+Plex+Mono:wght@400;500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<script>document.documentElement.classList.add('js')</script>
 <style>
   :root{
-    --ink:#0b1220; --ink-soft:#334155; --line:#e6eaf0;
-    --bg:#ffffff; --bg-soft:#f7f9fc; --accent:#1f6feb; --accent-ink:#0b3ea8;
+    --ink:#0b1220; --ink-soft:#3d4a60;
+    --paper:#ffffff; --paper-warm:#f8f5ee;
+    --line:#e4e2d9; --line-warm:#ddd7c8;
+    --accent:#1f6feb; --accent-ink:#0b3ea8; --accent-wash:#eef4ff;
+    --bronze:#7a5a2f;
     --max:1080px;
+    --ease:cubic-bezier(.22,1,.36,1);
+    --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.032'/%3E%3C/svg%3E");
   }
   *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: no-preference){ html{scroll-behavior:smooth} }
   body{
-    margin:0; background:var(--bg); color:var(--ink);
-    font-family:"Jost",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"Jost",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
     font-weight:400; line-height:1.65; -webkit-font-smoothing:antialiased;
   }
-  a{color:var(--accent); text-decoration:none}
-  a:hover{color:var(--accent-ink)}
+  a{color:var(--accent-ink); text-decoration:none}
   .wrap{max-width:var(--max); margin:0 auto; padding:0 24px}
-  h1,h2,h3{font-family:"Cormorant Garamond",Georgia,serif; font-weight:600; line-height:1.15; letter-spacing:.2px; margin:0}
+  h1,h2,h3{font-family:"Cormorant Garamond",Georgia,serif; font-weight:600; line-height:1.12; margin:0}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Consolas,monospace}
 
-  /* nav */
-  header{position:sticky; top:0; z-index:10; background:rgba(255,255,255,.86); backdrop-filter:saturate(150%) blur(8px); border-bottom:1px solid var(--line)}
-  nav{display:flex; align-items:center; justify-content:space-between; height:64px}
-  .brand{font-family:"Cormorant Garamond",serif; font-size:24px; font-weight:600; color:var(--ink)}
-  .brand span{color:var(--accent)}
-  .navlinks{display:flex; gap:26px; font-size:15px}
-  .navlinks a{color:var(--ink-soft)}
-  .navlinks a:hover{color:var(--ink)}
-  @media(max-width:560px){ .navlinks{gap:16px; font-size:14px} .brand{font-size:21px} }
   /* keyboard accessibility: clear focus ring + skip link */
   a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
   .skip{position:absolute; left:-9999px; top:0; background:var(--ink); color:#fff; padding:10px 16px; border-radius:0 0 8px 0; z-index:20}
   .skip:focus{left:0; color:#fff}
 
-  /* hero */
-  .hero{padding:96px 0 72px}
-  .kicker{font-size:13px; letter-spacing:.18em; text-transform:uppercase; color:var(--accent-ink); font-weight:600}
-  .hero h1{font-size:clamp(40px,7vw,72px); margin:14px 0 18px}
-  .lead{font-size:clamp(18px,2.4vw,22px); color:var(--ink-soft); max-width:640px}
-  .cta{margin-top:34px; display:flex; gap:14px; flex-wrap:wrap}
-  .btn{display:inline-block; padding:13px 24px; border-radius:999px; font-weight:500; font-size:15px}
+  /* ---------- nav ---------- */
+  header{
+    position:sticky; top:0; z-index:10;
+    background:rgba(255,255,255,.88); backdrop-filter:saturate(150%) blur(8px);
+    border-top:3px solid var(--ink); border-bottom:1px solid var(--line);
+  }
+  nav{display:flex; align-items:center; justify-content:space-between; height:64px}
+  .brand{font-family:"Cormorant Garamond",Georgia,serif; font-size:23px; font-weight:600; color:var(--ink); letter-spacing:.01em}
+  .brand span{color:var(--accent)}
+  .navlinks{display:flex; gap:30px; font-size:15px}
+  .navlinks a{color:var(--ink-soft); position:relative; padding:4px 0}
+  .navlinks a::after{content:""; position:absolute; left:0; right:0; bottom:0; height:1px; background:var(--accent); transform:scaleX(0); transform-origin:0 50%; transition:transform .2s var(--ease)}
+  @media(hover:hover){
+    .navlinks a:hover{color:var(--ink)}
+    .navlinks a:hover::after{transform:scaleX(1)}
+  }
+  @media(max-width:560px){ .navlinks{gap:18px; font-size:14px} .brand{font-size:20px} }
+
+  /* ---------- hero ---------- */
+  .hero{padding:118px 0 96px}
+  @media(max-width:720px){ .hero{padding:76px 0 64px} }
+  .kicker{
+    display:flex; align-items:center; gap:14px; margin:0;
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:12px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:var(--accent-ink);
+  }
+  .kicker::before{content:""; width:36px; height:1px; background:var(--accent); flex:none}
+  .hero h1{font-size:clamp(46px,8.6vw,96px); margin:22px 0 26px; line-height:1.03; letter-spacing:-.012em}
+  .hero h1 .line{display:block}
+  .sig{font-style:italic; font-weight:600; position:relative}
+  .sig::after{
+    content:""; position:absolute; left:.02em; right:.06em; bottom:.03em; height:2px;
+    background:var(--accent); transform:scaleX(0); transform-origin:0 50%;
+  }
+  .lead{font-size:clamp(18px,2.3vw,21px); color:var(--ink-soft); max-width:620px; margin:0}
+  .cta{margin-top:36px; display:flex; gap:14px; flex-wrap:wrap}
+  .btn{
+    display:inline-block; padding:14px 28px; border-radius:2px;
+    font-size:13px; font-weight:500; letter-spacing:.12em; text-transform:uppercase;
+    transition:transform .18s var(--ease), box-shadow .18s var(--ease), background-color .18s var(--ease), border-color .18s var(--ease);
+  }
   .btn-primary{background:var(--ink); color:#fff}
-  .btn-primary:hover{background:#111a2e; color:#fff}
   .btn-ghost{border:1px solid var(--line); color:var(--ink)}
-  .btn-ghost:hover{border-color:var(--ink)}
+  @media(hover:hover){
+    .btn-primary:hover{background:#152238; color:#fff; transform:translateY(-2px); box-shadow:0 10px 24px -14px rgba(11,18,32,.5)}
+    .btn-ghost:hover{border-color:var(--ink); transform:translateY(-2px)}
+  }
+  .btn:active{transform:translateY(0)}
+  .hero-note{
+    margin-top:52px; padding-top:18px; border-top:1px solid var(--line);
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12.5px; letter-spacing:.02em;
+    color:var(--bronze); max-width:560px;
+  }
 
-  /* sections */
-  section{padding:72px 0; border-top:1px solid var(--line)}
-  .eyebrow{font-size:13px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent-ink); font-weight:600; margin-bottom:12px}
-  .sec-title{font-size:clamp(28px,4vw,40px); margin-bottom:28px}
+  /* hero entrance (staggered, transform+opacity only) */
+  @keyframes rise{from{opacity:0; transform:translateY(18px)} to{opacity:1; transform:none}}
+  @keyframes draw{to{transform:scaleX(1)}}
+  .fx{animation:rise .7s var(--ease) both}
+  .fx1{animation-delay:.05s} .fx2{animation-delay:.14s} .fx3{animation-delay:.26s} .fx4{animation-delay:.38s} .fx5{animation-delay:.5s}
+  .sig::after{animation:draw .7s var(--ease) 1s forwards}
 
-  .grid{display:grid; grid-template-columns:repeat(2,1fr); gap:22px}
-  @media(max-width:720px){ .grid{grid-template-columns:1fr} }
-  .card{border:1px solid var(--line); border-radius:16px; padding:26px; background:var(--bg-soft); transition:transform .15s ease,box-shadow .15s ease}
-  .card:hover{transform:translateY(-3px); box-shadow:0 12px 30px -18px rgba(11,18,32,.4)}
-  .card h3{font-size:24px; margin-bottom:8px}
-  .card p{margin:0; color:var(--ink-soft); font-size:15.5px}
+  /* ---------- section furniture ---------- */
+  section{padding:96px 0}
+  @media(max-width:720px){ section{padding:64px 0} }
+  .tint{background:var(--paper-warm); background-image:var(--grain); border-top:1px solid var(--line); border-bottom:1px solid var(--line)}
+  .sec-head{margin-bottom:44px}
+  .sec-mark{display:flex; align-items:center; gap:14px}
+  .sec-no{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:13px; font-weight:500; color:var(--accent); letter-spacing:.06em}
+  .eyebrow{
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:11.5px; font-weight:500; letter-spacing:.22em; text-transform:uppercase; color:var(--ink-soft);
+  }
+  .sec-rule{flex:1; height:1px; background:linear-gradient(90deg,var(--accent) 0,var(--line) 120px)}
+  .sec-title{font-size:clamp(32px,4.6vw,48px); margin-top:14px; letter-spacing:-.008em}
 
-  .work{display:grid; grid-template-columns:repeat(2,1fr); gap:18px}
+  /* ---------- services: ledger rows ---------- */
+  .ledger{list-style:none; margin:0; padding:0; border-top:1px solid var(--line-warm)}
+  .ledger li{
+    display:grid; grid-template-columns:minmax(210px,.9fr) 1.6fr; gap:8px 56px;
+    padding:32px 0; border-bottom:1px solid var(--line-warm);
+  }
+  @media(max-width:720px){ .ledger li{grid-template-columns:1fr; gap:8px; padding:26px 0} }
+  .ledger h3{font-size:27px; font-weight:600}
+  .ledger .svc-tag{
+    display:block; margin-top:8px;
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; font-weight:500;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--bronze);
+  }
+  .ledger p{margin:0; color:var(--ink-soft); font-size:15.5px; align-self:center}
+  .ledger p a{border-bottom:1px solid rgba(31,111,235,.35)}
+  @media(hover:hover){ .ledger p a:hover{color:var(--accent); border-bottom-color:var(--accent)} }
+
+  /* ---------- work: artifact cards ---------- */
+  .work{display:grid; grid-template-columns:repeat(2,1fr); gap:20px}
   @media(max-width:720px){ .work{grid-template-columns:1fr} }
-  .repo{display:block; border:1px solid var(--line); border-radius:14px; padding:20px 22px; background:#fff}
-  .repo:hover{border-color:var(--accent)}
-  .repo .name{font-weight:600; color:var(--ink); font-size:16px}
-  .repo .desc{color:var(--ink-soft); font-size:14.5px; margin-top:4px}
-  .repo .tag{display:inline-block; margin-top:12px; font-size:12px; letter-spacing:.04em; color:var(--accent-ink); background:#eaf1ff; padding:3px 10px; border-radius:999px}
+  .repo{
+    display:flex; flex-direction:column; gap:12px; position:relative;
+    border:1px solid var(--line); border-radius:4px; padding:26px 26px 22px; background:#fff;
+    transition:transform .2s var(--ease), box-shadow .2s var(--ease), border-color .2s var(--ease);
+  }
+  .repo-top{display:flex; align-items:baseline; justify-content:space-between; gap:12px}
+  .repo .name{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:16px; font-weight:500; color:var(--ink);
+  }
+  .repo .idx{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; color:var(--bronze); letter-spacing:.08em}
+  .repo .desc{color:var(--ink-soft); font-size:14.5px; margin:0; flex:1}
+  .repo .meta{display:flex; flex-wrap:wrap; gap:7px; margin-top:2px}
+  .chip{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; font-weight:500;
+    letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft);
+    border:1px solid var(--line); border-radius:2px; padding:3px 8px;
+  }
+  .chip.proof{color:var(--accent-ink); background:var(--accent-wash); border-color:#d4e2fb; text-transform:none; letter-spacing:.02em}
+  .chip.proof b{font-weight:500; letter-spacing:.14em; text-transform:uppercase; margin-right:6px; color:var(--accent)}
+  .repo .go{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11.5px; color:var(--accent-ink);
+    letter-spacing:.06em; margin-top:6px;
+  }
+  .repo .go i{font-style:normal; display:inline-block; transition:transform .18s var(--ease)}
+  @media(hover:hover){
+    .repo:hover{transform:translateY(-4px); border-color:var(--accent); box-shadow:0 18px 40px -24px rgba(11,18,32,.45)}
+    .repo:hover .go i{transform:translate(3px,-2px)}
+  }
+  .repo:active{transform:translateY(-1px)}
+  .work-more{
+    margin-top:26px; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12.5px; color:var(--ink-soft);
+  }
+  .work-more a{border-bottom:1px solid rgba(31,111,235,.35)}
+  @media(hover:hover){ .work-more a:hover{color:var(--accent); border-bottom-color:var(--accent)} }
 
-  /* contact */
-  .contact-grid{display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:start}
-  @media(max-width:720px){ .contact-grid{grid-template-columns:1fr; gap:28px} }
-  form{display:flex; flex-direction:column; gap:14px}
-  label{font-size:14px; color:var(--ink-soft)}
-  input,textarea{font-family:inherit; font-size:15px; padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink)}
+  /* ---------- contact ---------- */
+  .contact-grid{display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:start}
+  @media(max-width:720px){ .contact-grid{grid-template-columns:1fr; gap:32px} }
+  #contact .sec-title{margin-bottom:16px}
+  .contact-copy{color:var(--ink-soft); max-width:420px}
+  form{display:flex; flex-direction:column; gap:16px}
+  label{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; font-weight:500;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--ink-soft);
+  }
+  input,textarea{
+    font-family:"Jost",system-ui,sans-serif; font-size:15px; padding:12px 14px; margin-top:6px;
+    border:1px solid var(--line-warm); border-radius:2px; background:#fff; color:var(--ink);
+    transition:border-color .18s var(--ease);
+  }
   input:focus,textarea:focus{outline:none; border-color:var(--accent)}
+  .facts{list-style:none; margin:30px 0 0; padding:0; max-width:420px; border-top:1px solid var(--line-warm)}
+  .facts li{
+    display:flex; justify-content:space-between; align-items:baseline; gap:16px;
+    padding:11px 2px; border-bottom:1px solid var(--line-warm);
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12.5px; letter-spacing:.03em; color:var(--ink);
+  }
+  .facts li span{font-size:10.5px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--bronze)}
   .hp{position:absolute; left:-9999px}  /* honeypot: hidden from humans, catches bots */
-  button[type=submit]{align-self:flex-start; padding:13px 26px; border:0; border-radius:999px; background:var(--ink); color:#fff; font-weight:500; font-size:15px; cursor:pointer}
-  button[type=submit]:hover{background:#111a2e}
+  button[type=submit]{
+    align-self:flex-start; padding:14px 30px; border:0; border-radius:2px;
+    background:var(--ink); color:#fff; cursor:pointer;
+    font-family:"Jost",system-ui,sans-serif; font-size:13px; font-weight:500; letter-spacing:.12em; text-transform:uppercase;
+    transition:transform .18s var(--ease), box-shadow .18s var(--ease), background-color .18s var(--ease);
+  }
+  @media(hover:hover){
+    button[type=submit]:hover{background:#152238; transform:translateY(-2px); box-shadow:0 10px 24px -14px rgba(11,18,32,.5)}
+  }
+  button[type=submit]:active{transform:translateY(0)}
+  button[type=submit]:disabled{opacity:.55; cursor:default; transform:none; box-shadow:none}
 
-  footer{padding:40px 0 56px; color:var(--ink-soft); font-size:14px; border-top:1px solid var(--line)}
-  .foot{display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px}
+  /* ---------- footer ---------- */
+  footer{background:var(--ink); color:#b9c2d4; font-size:14px; border-top:2px solid var(--accent)}
+  .foot{display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:12px; padding:44px 0 52px}
+  .foot-brand{font-family:"Cormorant Garamond",Georgia,serif; font-size:20px; color:#fff}
+  .foot-brand span{color:#7cc4ff}
+  .foot .mono{font-size:12px; letter-spacing:.06em}
+  footer a{color:#7cc4ff}
+  @media(hover:hover){ footer a:hover{color:#a9d7ff} }
+
+  /* ---------- scroll reveals (gated on .js so no-JS users see everything) ---------- */
+  .js .reveal{opacity:0; transform:translateY(16px); transition:opacity .55s var(--ease), transform .55s var(--ease)}
+  .js .reveal.in{opacity:1; transform:none}
+  .js .work .reveal:nth-child(even){transition-delay:.09s}
+  .js .ledger .reveal:nth-child(2){transition-delay:.06s}
+  .js .ledger .reveal:nth-child(3){transition-delay:.12s}
+  .js .ledger .reveal:nth-child(4){transition-delay:.18s}
+
+  /* ---------- reduced motion: everything visible, nothing animates ---------- */
+  @media (prefers-reduced-motion: reduce){
+    .fx{animation:none}
+    .sig::after{animation:none; transform:scaleX(1)}
+    .js .reveal{opacity:1; transform:none; transition:none}
+    .btn,.repo,.navlinks a::after,.repo .go i,button[type=submit]{transition:none}
+  }
 </style>
 </head>
 <body>
@@ -106,7 +248,7 @@
 
 <header>
   <nav class="wrap">
-    <div class="brand">Laurin<span>.</span></div>
+    <div class="brand">Laurin Lin<span>.</span></div>
     <div class="navlinks">
       <a href="#work">Work</a>
       <a href="#services">Services</a>
@@ -116,93 +258,141 @@
 </header>
 
 <main id="main">
-  <section class="hero" style="border-top:0">
+  <section class="hero">
     <div class="wrap">
-      <div class="kicker">Melbourne, Australia · Remote</div>
-      <h1>I build AI systems<br/>that actually ship.</h1>
-      <p class="lead">Freelance engineer working on AI integrations, LLM and agent systems, workflow automation, and AI-video pipelines. End to end, tested, and running — not slideware.</p>
-      <div class="cta">
+      <p class="kicker fx fx1">Melbourne, Australia · Remote</p>
+      <h1><span class="line fx fx2">I build AI systems</span><span class="line fx fx3">that <em class="sig">actually ship.</em></span></h1>
+      <p class="lead fx fx4">Freelance engineer working on AI integrations, LLM and agent systems, workflow automation, and AI-video pipelines. End to end, tested, and running — not slideware.</p>
+      <div class="cta fx fx5">
         <a class="btn btn-primary" href="#contact">Start a project</a>
         <a class="btn btn-ghost" href="#work">See the code</a>
       </div>
+      <p class="hero-note fx fx5">Proof over promises — the numbers on the project cards below are pulled from each repository's own tests and evals, not estimated.</p>
     </div>
   </section>
 
-  <section id="services">
+  <section id="services" class="tint">
     <div class="wrap">
-      <div class="eyebrow">What I do</div>
-      <h2 class="sec-title">Services</h2>
-      <div class="grid">
-        <div class="card">
-          <h3>AI &amp; LLM integration</h3>
-          <p>Wire Claude, GPT, or Gemini into your product — chatbots, agents, RAG over your docs, structured output, tool use, cost control.</p>
-        </div>
-        <div class="card">
-          <h3>Workflow automation</h3>
-          <p>Turn a manual process into an unattended pipeline: ingest, LLM logic, and delivery, with graceful failure handling and clean logs.</p>
-        </div>
-        <div class="card">
-          <h3>AI-video automation</h3>
-          <p>Auto-editing and generation pipelines for short-form video — cuts, hooks, captions, pacing — no manual edit per clip. See <a href="https://github.com/ssh071102-code/script2video" target="_blank" rel="noopener">script2video</a> for the assembly layer.</p>
-        </div>
-        <div class="card">
-          <h3>Sites &amp; deployment</h3>
-          <p>Static sites deployed cleanly on GitHub Pages, Netlify, or Vercel, with HTTPS, forms, fonts, SEO, and end-to-end testing before handoff — this site is one.</p>
-        </div>
+      <div class="sec-head reveal">
+        <div class="sec-mark"><span class="sec-no">01</span><span class="eyebrow">What I do</span><span class="sec-rule" aria-hidden="true"></span></div>
+        <h2 class="sec-title">Services</h2>
       </div>
+      <ol class="ledger">
+        <li class="reveal">
+          <div>
+            <h3>AI &amp; LLM integration</h3>
+            <span class="svc-tag">Chat · Agents · RAG</span>
+          </div>
+          <p>Wire Claude, GPT, or Gemini into your product — chatbots, agents, RAG over your docs, structured output, tool use, cost control.</p>
+        </li>
+        <li class="reveal">
+          <div>
+            <h3>Workflow automation</h3>
+            <span class="svc-tag">Pipelines · Unattended</span>
+          </div>
+          <p>Turn a manual process into an unattended pipeline: ingest, LLM logic, and delivery, with graceful failure handling and clean logs.</p>
+        </li>
+        <li class="reveal">
+          <div>
+            <h3>AI-video automation</h3>
+            <span class="svc-tag">Short-form · Generation</span>
+          </div>
+          <p>Auto-editing and generation pipelines for short-form video — cuts, hooks, captions, pacing — no manual edit per clip. See <a href="https://github.com/ssh071102-code/script2video" target="_blank" rel="noopener">script2video</a> for the assembly layer.</p>
+        </li>
+        <li class="reveal">
+          <div>
+            <h3>Sites &amp; deployment</h3>
+            <span class="svc-tag">Static · Tested · Live</span>
+          </div>
+          <p>Static sites deployed cleanly on GitHub Pages, Netlify, or Vercel, with HTTPS, forms, fonts, SEO, and end-to-end testing before handoff — this site is one.</p>
+        </li>
+      </ol>
     </div>
   </section>
 
   <section id="work">
     <div class="wrap">
-      <div class="eyebrow">Selected work · open source</div>
-      <h2 class="sec-title">Things I've built</h2>
+      <div class="sec-head reveal">
+        <div class="sec-mark"><span class="sec-no">02</span><span class="eyebrow">Selected work · open source</span><span class="sec-rule" aria-hidden="true"></span></div>
+        <h2 class="sec-title">Things I've built</h2>
+      </div>
       <div class="work">
-        <a class="repo" href="https://github.com/ssh071102-code/grounded-chat" target="_blank" rel="noopener">
-          <div class="name">grounded-chat</div>
-          <div class="desc">Full-stack RAG chat that refuses to make things up — streaming answers with inline citations and a groundedness verifier that flags unsupported claims.</div>
-          <span class="tag">Next.js · TypeScript · RAG</span>
+        <a class="repo reveal" href="https://github.com/ssh071102-code/grounded-chat" target="_blank" rel="noopener">
+          <div class="repo-top"><span class="name">grounded-chat</span><span class="idx">01</span></div>
+          <p class="desc">Full-stack RAG chat that refuses to make things up — streaming answers with inline citations and a groundedness verifier that flags unsupported claims.</p>
+          <div class="meta">
+            <span class="chip">Next.js</span><span class="chip">TypeScript</span><span class="chip">RAG</span>
+            <span class="chip proof"><b>Proof</b>recall@5 0.80 · MRR 0.68, measured eval</span>
+          </div>
+          <span class="go">View repository <i>&#8599;</i></span>
         </a>
-        <a class="repo" href="https://github.com/ssh071102-code/gig-radar" target="_blank" rel="noopener">
-          <div class="name">gig-radar</div>
-          <div class="desc">Automated lead-gen pipeline: pulls listings, scores each with an LLM, drafts tailored proposals.</div>
-          <span class="tag">Python · LLM · automation</span>
+        <a class="repo reveal" href="https://github.com/ssh071102-code/gig-radar" target="_blank" rel="noopener">
+          <div class="repo-top"><span class="name">gig-radar</span><span class="idx">02</span></div>
+          <p class="desc">Automated lead-gen pipeline: pulls listings, scores each with an LLM, drafts tailored proposals.</p>
+          <div class="meta">
+            <span class="chip">Python</span><span class="chip">LLM</span><span class="chip">Automation</span>
+            <span class="chip proof"><b>Proof</b>61 offline tests, CI-run</span>
+          </div>
+          <span class="go">View repository <i>&#8599;</i></span>
         </a>
-        <a class="repo" href="https://github.com/ssh071102-code/ai-council" target="_blank" rel="noopener">
-          <div class="name">ai-council</div>
-          <div class="desc">Multi-LLM consensus framework — voters deliberate in parallel with weighted voting and veto rules.</div>
-          <span class="tag">Python · async</span>
+        <a class="repo reveal" href="https://github.com/ssh071102-code/ai-council" target="_blank" rel="noopener">
+          <div class="repo-top"><span class="name">ai-council</span><span class="idx">03</span></div>
+          <p class="desc">Multi-LLM consensus framework — voters deliberate in parallel with weighted voting and veto rules.</p>
+          <div class="meta">
+            <span class="chip">Python</span><span class="chip">Async</span>
+            <span class="chip proof"><b>Proof</b>zero runtime deps, stdlib only</span>
+          </div>
+          <span class="go">View repository <i>&#8599;</i></span>
         </a>
-        <a class="repo" href="https://github.com/ssh071102-code/prompt-forge" target="_blank" rel="noopener">
-          <div class="name">prompt-forge</div>
-          <div class="desc">Iterative prompt optimizer that hill-climbs a prompt against labeled examples and keeps only real gains.</div>
-          <span class="tag">Python · LLM</span>
+        <a class="repo reveal" href="https://github.com/ssh071102-code/prompt-forge" target="_blank" rel="noopener">
+          <div class="repo-top"><span class="name">prompt-forge</span><span class="idx">04</span></div>
+          <p class="desc">Iterative prompt optimizer that hill-climbs a prompt against labeled examples and keeps only real gains.</p>
+          <div class="meta">
+            <span class="chip">Python</span><span class="chip">LLM</span>
+            <span class="chip proof"><b>Proof</b>28 offline tests · under 600 lines</span>
+          </div>
+          <span class="go">View repository <i>&#8599;</i></span>
         </a>
-        <a class="repo" href="https://github.com/ssh071102-code/claude-screen-mcp" target="_blank" rel="noopener">
-          <div class="name">claude-screen-mcp</div>
-          <div class="desc">Read-only MCP server exposing screenshots, OCR, and change detection to AI agents.</div>
-          <span class="tag">TypeScript · MCP</span>
+        <a class="repo reveal" href="https://github.com/ssh071102-code/claude-screen-mcp" target="_blank" rel="noopener">
+          <div class="repo-top"><span class="name">claude-screen-mcp</span><span class="idx">05</span></div>
+          <p class="desc">Read-only MCP server exposing screenshots, OCR, and change detection to AI agents.</p>
+          <div class="meta">
+            <span class="chip">TypeScript</span><span class="chip">MCP</span>
+            <span class="chip proof"><b>Proof</b>10 tools, e2e wire-tested</span>
+          </div>
+          <span class="go">View repository <i>&#8599;</i></span>
         </a>
-        <a class="repo" href="https://github.com/ssh071102-code/script2video" target="_blank" rel="noopener">
-          <div class="name">script2video</div>
-          <div class="desc">Markdown script to narrated, captioned video in one command — neural TTS with word-accurate timings and deterministic ffmpeg assembly.</div>
-          <span class="tag">Python · TTS · ffmpeg</span>
+        <a class="repo reveal" href="https://github.com/ssh071102-code/script2video" target="_blank" rel="noopener">
+          <div class="repo-top"><span class="name">script2video</span><span class="idx">06</span></div>
+          <p class="desc">Markdown script to narrated, captioned video in one command — neural TTS with word-accurate timings and deterministic ffmpeg assembly.</p>
+          <div class="meta">
+            <span class="chip">Python</span><span class="chip">TTS</span><span class="chip">ffmpeg</span>
+            <span class="chip proof"><b>Proof</b>78 tests · 83s rendered demo</span>
+          </div>
+          <span class="go">View repository <i>&#8599;</i></span>
         </a>
       </div>
-      <p style="margin-top:22px;color:var(--ink-soft);font-size:15px">More on <a href="https://github.com/ssh071102-code" target="_blank" rel="noopener">github.com/ssh071102-code</a>.</p>
+      <p class="work-more reveal">Full index — <a href="https://github.com/ssh071102-code" target="_blank" rel="noopener">github.com/ssh071102-code</a></p>
     </div>
   </section>
 
-  <section id="contact">
+  <section id="contact" class="tint">
     <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="sec-mark"><span class="sec-no">03</span><span class="eyebrow">Contact</span><span class="sec-rule" aria-hidden="true"></span></div>
+      </div>
       <div class="contact-grid">
-        <div>
-          <div class="eyebrow">Contact</div>
+        <div class="reveal">
           <h2 class="sec-title">Let's build something.</h2>
-          <p style="color:var(--ink-soft);max-width:420px">Tell me what you're trying to ship. I reply within a day, and I'm happy to start with a small fixed-scope pilot so you can see the work risk-free.</p>
+          <p class="contact-copy">Tell me what you're trying to ship. I reply within a day, and I'm happy to start with a small fixed-scope pilot so you can see the work risk-free.</p>
+          <ul class="facts">
+            <li><span>Response</span>within a day</li>
+            <li><span>First step</span>small fixed-scope pilot</li>
+            <li><span>Timezone</span>Melbourne (AEST)</li>
+          </ul>
         </div>
         <!-- Web3Forms backend: the access_key is a public client-side id; the destination inbox stays server-side. -->
-        <form name="contact" action="https://api.web3forms.com/submit" method="POST" aria-label="Contact">
+        <form class="reveal" name="contact" action="https://api.web3forms.com/submit" method="POST" aria-label="Contact">
           <input type="hidden" name="access_key" value="8bc2a69f-f56f-49d5-8cdb-4200bfd2b05f" />
           <input type="hidden" name="subject" value="New inquiry from laurin-landing" />
           <input type="checkbox" name="botcheck" class="hp" style="display:none" tabindex="-1" aria-hidden="true" />
@@ -247,10 +437,30 @@
 
 <footer>
   <div class="wrap foot">
-    <div>© 2026 Laurin Lin · AI Integration &amp; Automation Engineer</div>
-    <div><a href="https://github.com/ssh071102-code" target="_blank" rel="noopener">GitHub</a></div>
+    <div>
+      <div class="foot-brand">Laurin Lin<span>.</span></div>
+      <div class="mono" style="margin-top:6px">&copy; 2026 · AI Integration &amp; Automation Engineer</div>
+    </div>
+    <div class="mono">Melbourne, Australia · Remote — <a href="https://github.com/ssh071102-code" target="_blank" rel="noopener">GitHub</a></div>
   </div>
 </footer>
+
+<script>
+  (function () {
+    var els = [].slice.call(document.querySelectorAll('.reveal'));
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce || !('IntersectionObserver' in window)) {
+      els.forEach(function (el) { el.classList.add('in'); });
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.06 });
+    els.forEach(function (el) { io.observe(el); });
+  })();
+</script>
 
 </body>
 </html>
