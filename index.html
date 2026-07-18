@@ -58,8 +58,13 @@
     --header-bg:rgba(250,247,240,.9);
     --grid-op:0; --glow-op:0;
     --d-lt:inline; --d-dk:none; --db-dk:none;
-    --h1-size:clamp(46px,9vw,132px);
-    --h1-weight:600; --h1-lh:.98; --h1-ls:-.022em; --h2-weight:600;
+    --h1-size:clamp(54px,min(13vw,16svh),176px);
+    --h1-weight:600; --h1-lh:.94; --h1-ls:-.02em; --h2-weight:600;
+    --brand-tt:none; --brand2-style:italic;
+    --scrim-x:linear-gradient(90deg,rgba(250,247,240,.93) 0%,rgba(250,247,240,.68) 44%,rgba(250,247,240,.2) 76%,rgba(250,247,240,0) 100%);
+    --scrim-b:linear-gradient(0deg,rgba(250,247,240,.92) 0%,rgba(250,247,240,0) 34%);
+    --frame-op:1;
+    --hud-bg:rgba(255,253,246,.88); --hud-border:#d8d2c4;
     --sig-style:italic; --sig-weight:500; --sig-color:currentColor;
     --sig-ul:#1f5aa8; --sig-sx:0;
     --sig-anim:draw .7s cubic-bezier(.22,1,.36,1) 1.05s forwards;
@@ -114,8 +119,13 @@
     --header-bg:rgba(10,12,16,.82);
     --grid-op:1; --glow-op:1;
     --d-lt:none; --d-dk:inline; --db-dk:block;
-    --h1-size:clamp(42px,7.3vw,104px);
-    --h1-weight:500; --h1-lh:1.04; --h1-ls:-.025em; --h2-weight:500;
+    --h1-size:clamp(44px,min(11vw,13.5svh),150px);
+    --h1-weight:500; --h1-lh:1.02; --h1-ls:.02em; --h2-weight:500;
+    --brand-tt:uppercase; --brand2-style:normal;
+    --scrim-x:linear-gradient(90deg,rgba(10,12,16,.86) 0%,rgba(10,12,16,.56) 46%,rgba(10,12,16,.16) 78%,rgba(10,12,16,0) 100%);
+    --scrim-b:linear-gradient(0deg,rgba(10,12,16,.88) 0%,rgba(10,12,16,0) 36%);
+    --frame-op:0;
+    --hud-bg:rgba(13,16,22,.82); --hud-border:#1e2531;
     --sig-style:normal; --sig-weight:500; --sig-color:#5ea0ff;
     --sig-ul:#5ea0ff; --sig-sx:1;
     --sig-anim:pulse 2.4s ease-in-out 1.2s infinite;
@@ -171,8 +181,13 @@
       --header-bg:rgba(10,12,16,.82);
       --grid-op:1; --glow-op:1;
       --d-lt:none; --d-dk:inline; --db-dk:block;
-      --h1-size:clamp(42px,7.3vw,104px);
-      --h1-weight:500; --h1-lh:1.04; --h1-ls:-.025em; --h2-weight:500;
+      --h1-size:clamp(44px,min(11vw,13.5svh),150px);
+      --h1-weight:500; --h1-lh:1.02; --h1-ls:.02em; --h2-weight:500;
+      --brand-tt:uppercase; --brand2-style:normal;
+      --scrim-x:linear-gradient(90deg,rgba(10,12,16,.86) 0%,rgba(10,12,16,.56) 46%,rgba(10,12,16,.16) 78%,rgba(10,12,16,0) 100%);
+      --scrim-b:linear-gradient(0deg,rgba(10,12,16,.88) 0%,rgba(10,12,16,0) 36%);
+      --frame-op:0;
+      --hud-bg:rgba(13,16,22,.82); --hud-border:#1e2531;
       --sig-style:normal; --sig-weight:500; --sig-color:#5ea0ff;
       --sig-ul:#5ea0ff; --sig-sx:1;
       --sig-anim:pulse 2.4s ease-in-out 1.2s infinite;
@@ -316,10 +331,20 @@
   }
 
   /* ============================================================
-     HERO
+     HERO — full-bleed brand stage over the live neural core
      ============================================================ */
-  .hero{padding:104px 0 96px}
-  @media(max-width:720px){ .hero{padding:64px 0 64px} }
+  .hero{
+    position:relative; overflow:hidden;
+    display:flex; flex-direction:column; justify-content:center;
+    min-height:max(640px, calc(100svh - 110px));
+    padding:64px 0 170px;
+    touch-action:pan-y;
+  }
+  .nn-stage{position:absolute; inset:0; z-index:0}
+  .nn-stage canvas{display:block; width:100%; height:100%}
+  .hero-scrim{position:absolute; inset:0; z-index:1; pointer-events:none; background:var(--scrim-b),var(--scrim-x)}
+  .hero-frame{position:absolute; inset:14px; z-index:1; pointer-events:none; border:1px solid var(--line); opacity:var(--frame-op)}
+  .hero>.wrap{position:relative; z-index:2; width:100%}
   .kicker{
     display:flex; align-items:center; gap:14px; margin:0;
     font-family:var(--font-mono);
@@ -327,19 +352,24 @@
   }
   .kicker::before{content:""; width:36px; height:1px; background:var(--accent); flex:none}
   .hero h1{
-    font-size:var(--h1-size); margin:26px 0 40px;
+    font-size:var(--h1-size); margin:18px 0 20px;
     font-weight:var(--h1-weight); line-height:var(--h1-lh); letter-spacing:var(--h1-ls);
+    text-transform:var(--brand-tt);
   }
   .hero h1 .line{display:block}
+  .hero h1 .l2{font-style:var(--brand2-style)}
+  .hero h1 .bdot{color:var(--accent); font-style:normal}
+  .statement{
+    font-family:var(--font-display); font-size:clamp(21px,2.7vw,34px); font-weight:var(--h2-weight);
+    line-height:1.25; letter-spacing:-.01em; margin:0 0 20px; max-width:640px;
+  }
   .sig{font-style:var(--sig-style); font-weight:var(--sig-weight); color:var(--sig-color); position:relative}
   .sig::after{
     content:""; position:absolute; left:.02em; right:.05em; bottom:.04em; height:.045em;
     background:var(--sig-ul); transform:scaleX(var(--sig-sx)); transform-origin:0 50%;
     animation:var(--sig-anim);
   }
-  .hero-grid{display:grid; grid-template-columns:1.25fr .85fr; gap:64px; align-items:start}
-  @media(max-width:960px){ .hero-grid{grid-template-columns:1fr; gap:44px} }
-  .lead{font-size:clamp(18px,2.3vw,21px); color:var(--text-soft); max-width:620px; margin:0}
+  .lead{font-size:clamp(17px,2.1vw,20px); color:var(--text-soft); max-width:560px; margin:0}
   .lead::first-letter{
     font-family:var(--dc-font); font-size:var(--dc-size); float:var(--dc-float);
     line-height:var(--dc-lh); padding:var(--dc-pad); color:var(--dc-color); font-weight:var(--dc-weight);
@@ -358,7 +388,59 @@
   }
   .btn:active{transform:translateY(0)}
 
-  /* the dual-skin aside: bronze marginalia ledger / LIVE READOUT panel */
+  /* hero foot: caption (left) · live HUD chip (right) · scroll cue (center) */
+  .hero-foot{position:absolute; left:0; right:0; bottom:0; z-index:2; pointer-events:none}
+  .hero-foot .wrap{display:flex; justify-content:space-between; align-items:flex-end; gap:28px; padding-bottom:26px}
+  .nn-cap{
+    margin:0; max-width:400px; pointer-events:auto;
+    font-family:var(--font-mono); font-size:11px; line-height:1.7; letter-spacing:.04em;
+    color:var(--plate-cap);
+  }
+  .nn-cap b{color:var(--plate-b); font-weight:500}
+  .nn-cap .rm{display:none}
+  .hud{
+    pointer-events:auto; width:236px; flex:none;
+    font-family:var(--font-mono);
+    background:var(--hud-bg); border:1px solid var(--hud-border); border-radius:var(--btn-radius);
+    backdrop-filter:blur(6px); padding:10px 14px 8px;
+  }
+  .hud-hd{
+    display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+    font-size:10px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:var(--ro-key);
+    padding-bottom:8px; border-bottom:1px solid var(--hud-border); margin-bottom:3px;
+  }
+  .hud-dot{color:#3fd68f; font-size:9px}
+  .hud dl{margin:0}
+  .hud-row{display:flex; justify-content:space-between; align-items:baseline; gap:12px; font-size:12px; padding:5px 0}
+  .hud-row dt{color:var(--ro-key); font-weight:400}
+  .hud-row dd{margin:0; color:var(--ro-val); font-weight:500}
+  .hud-row dd.acc{color:var(--ro-acc)}
+  .hud-row dd.good{color:var(--ro-good)}
+  .cue{
+    position:absolute; left:50%; bottom:24px; transform:translateX(-50%); z-index:2;
+    display:flex; flex-direction:column; align-items:center; gap:9px;
+    font-family:var(--font-mono); font-size:10px; font-weight:500;
+    letter-spacing:.26em; text-transform:uppercase; color:var(--muted);
+  }
+  .cue-line{width:1px; height:34px; background:var(--line); position:relative; overflow:hidden}
+  .cue-line::after{content:""; position:absolute; left:0; top:-45%; width:100%; height:45%; background:var(--accent); animation:cuedrop 2.3s var(--ease) infinite}
+  @keyframes cuedrop{to{top:115%}}
+  @media(hover:hover){ .cue:hover{color:var(--text)} }
+  html:not(.js) .hud, html:not(.js) .nn-cap, html:not(.js) .nnrow{display:none}
+  @media (prefers-reduced-motion: reduce){
+    .nn-cap .live{display:none}
+    .nn-cap .rm{display:inline}
+  }
+  @media(max-width:960px){
+    .hero{padding:48px 0 40px; min-height:max(600px, calc(100svh - 100px))}
+    .hero-foot{position:static; pointer-events:auto; margin-top:30px}
+    .hero-foot .wrap{flex-direction:column; align-items:stretch; padding-bottom:0}
+    .nn-cap{max-width:430px}
+    .hud{width:100%; max-width:430px}
+    .cue{display:none}
+  }
+
+  /* the dual-skin panel: bronze marginalia ledger / LIVE READOUT panel */
   .readout{
     font-family:var(--font-mono); max-width:460px; width:100%;
     border:var(--ro-border); background:var(--ro-bg);
@@ -450,8 +532,11 @@
   }
 
   /* ============================================================
-     WORK — plates + artifact cards
+     WORK — numbers panel + plates + artifact cards
      ============================================================ */
+  .work-head{display:grid; grid-template-columns:1fr minmax(300px,380px); gap:32px 64px; align-items:end; margin-bottom:44px}
+  .work-head .sec-head{margin-bottom:0}
+  @media(max-width:880px){ .work-head{grid-template-columns:1fr} }
   .plates{display:grid; grid-template-columns:1fr 1fr; gap:44px; margin-bottom:56px}
   @media(max-width:720px){ .plates{grid-template-columns:1fr; gap:40px} }
   .plate{margin:0}
@@ -610,14 +695,19 @@
   .pw .glow{animation:fadein .9s var(--ease) both}
   .pw .topstrip{animation:fadein .5s var(--ease) both}
   .pw .ro-row{animation:rowup .4s var(--ease) both}
-  .pw .ro-row:nth-child(1){animation-delay:.05s}
-  .pw .ro-row:nth-child(2){animation-delay:.11s}
-  .pw .ro-row:nth-child(3){animation-delay:.17s}
-  .pw .ro-row:nth-child(4){animation-delay:.23s}
-  .pw .ro-row:nth-child(5){animation-delay:.29s}
-  .pw .ro-row:nth-child(6){animation-delay:.35s}
-  .pw .ro-row:nth-child(7){animation-delay:.41s}
+  .pw .ro-row:nth-child(1){animation-delay:.04s}
+  .pw .ro-row:nth-child(2){animation-delay:.08s}
+  .pw .ro-row:nth-child(3){animation-delay:.12s}
+  .pw .ro-row:nth-child(4){animation-delay:.16s}
+  .pw .ro-row:nth-child(5){animation-delay:.2s}
+  .pw .ro-row:nth-child(6){animation-delay:.24s}
+  .pw .ro-row:nth-child(7){animation-delay:.28s}
+  .pw .ro-row:nth-child(8){animation-delay:.32s}
+  .pw .ro-row:nth-child(9){animation-delay:.36s}
+  .pw .ro-row:nth-child(10){animation-delay:.4s}
+  .pw .hud{animation:rowup .4s var(--ease) both .28s}
   .pw .toggle{animation:scan .45s var(--ease)}
+  .pal-open .khint{animation:scan .45s var(--ease)}
   @keyframes fadein{from{opacity:0}}
   @keyframes rowup{from{opacity:0; transform:translateY(6px)}}
   @keyframes scan{0%{filter:brightness(1)} 30%{filter:brightness(2.1) saturate(1.6)} 100%{filter:brightness(1)}}
@@ -636,7 +726,9 @@
     .btn,.repo,.navlinks a::after,.repo .go i,button[type=submit],.t-opt{transition:none}
     .tk-in{animation:none}
     .pal-box{animation:none}
-    .pw .gridbg,.pw .glow,.pw .topstrip,.pw .ro-row,.pw .toggle,
+    .cue-line::after{animation:none; top:30%}
+    .pal-open .khint{animation:none}
+    .pw .gridbg,.pw .glow,.pw .topstrip,.pw .ro-row,.pw .toggle,.pw .hud,
     .iw #wash,.iw main{animation:none}
   }
 </style>
@@ -674,34 +766,38 @@
 </header>
 
 <main id="main">
-  <section class="hero">
+  <section class="hero" aria-label="Introduction">
+    <div class="nn-stage" id="nnStage" aria-hidden="true"><canvas id="nncanvas"></canvas></div>
+    <div class="hero-scrim" aria-hidden="true"></div>
+    <div class="hero-frame" aria-hidden="true"></div>
     <div class="wrap">
       <p class="kicker fx fx1">Melbourne, Australia · Remote</p>
-      <h1><span class="line fx fx2">I build AI systems</span><span class="line fx fx3">that <em class="sig">actually ship.</em></span></h1>
-      <div class="hero-grid">
-        <div class="fx fx4">
-          <p class="lead">Freelance engineer working on AI integrations, LLM and agent systems, workflow automation, and AI-video pipelines. End to end, tested, and running — not slideware.</p>
-          <div class="cta">
-            <a class="btn btn-primary" href="#contact">Start a project</a>
-            <a class="btn btn-ghost" href="#work">See the code</a>
-          </div>
-        </div>
-        <aside class="readout fx fx5" aria-label="Verified numbers">
-          <div class="ro-hd"><span><span class="lt">By the numbers</span><span class="dk">Live readout</span></span><span aria-hidden="true">&mdash;</span></div>
-          <dl class="ro-rows">
-            <div class="ro-row"><dt>tests_passing</dt><dd class="good"><span id="countTests" data-count="233">233</span> / 233</dd></div>
-            <div class="ro-row"><dt>public_repos</dt><dd>6</dd></div>
-            <div class="ro-row"><dt>rag.recall@5</dt><dd class="acc">0.80</dd></div>
-            <div class="ro-row"><dt>rag.mrr</dt><dd class="acc">0.68</dd></div>
-            <div class="ro-row"><dt>mcp.tools_wired</dt><dd>10 / 10</dd></div>
-            <div class="ro-row"><dt>video.render</dt><dd>83s · 1 cmd</dd></div>
-            <div class="ro-row"><dt>response_time</dt><dd class="good">&lt; 24h</dd></div>
-          </dl>
-          <p class="ro-note">Proof over promises — the numbers on the project cards below are pulled from each repository's own tests and evals, not estimated.</p>
-          <p class="ro-foot">233 tests across 6 repos · CI green</p>
-        </aside>
+      <h1><span class="line fx fx2">Laurin</span><span class="line l2 fx fx3">Lin<span class="bdot">.</span></span></h1>
+      <p class="statement fx fx3">I build AI systems that <em class="sig">actually ship.</em></p>
+      <p class="lead fx fx4">Freelance engineer working on AI integrations, LLM and agent systems, workflow automation, and AI-video pipelines. End to end, tested, and running — not slideware.</p>
+      <div class="cta fx fx4">
+        <a class="btn btn-primary" href="#contact">Start a project</a>
+        <a class="btn btn-ghost" href="#work">See the code</a>
       </div>
     </div>
+    <div class="hero-foot fx fx5">
+      <div class="wrap">
+        <p class="nn-cap">
+          <span class="lt">Plate 00 — </span><span class="dk">live_demo / </span><b>the network that learns you.</b>
+          <span class="live">A real neural network — not a video. It is learning your cursor right now: forward passes and SGD weight updates, live in this browser, predicting 300&nbsp;ms ahead.</span>
+          <span class="rm">A real neural network backs this hero. Your system prefers reduced motion, so it is shown as a single static forward pass — nothing animates or trains.</span>
+        </p>
+        <div class="hud" role="group" aria-label="Live neural network readout">
+          <div class="hud-hd"><span><span class="lt">Live from this page</span><span class="dk">nn.live</span></span><span class="hud-dot" aria-hidden="true">&#9679;</span></div>
+          <dl>
+            <div class="hud-row"><dt>nn.loss</dt><dd class="acc" id="nnLossChip">&mdash;</dd></div>
+            <div class="hud-row"><dt>nn.sgd_steps</dt><dd id="nnStepsChip">&mdash;</dd></div>
+            <div class="hud-row"><dt>tests</dt><dd class="good">233 / 233</dd></div>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <a class="cue" href="#services"><span><span class="lt">Read on</span><span class="dk">Scroll</span></span><span class="cue-line" aria-hidden="true"></span></a>
   </section>
 
   <section id="services" class="tint">
@@ -749,9 +845,28 @@
 
   <section id="work">
     <div class="wrap">
-      <div class="sec-head reveal">
-        <div class="sec-mark"><span class="sec-no">02</span><span class="eyebrow">Selected work · open source</span><span class="sec-rule" aria-hidden="true"></span></div>
-        <h2 class="sec-title">Things I've built</h2>
+      <div class="work-head reveal">
+        <div class="sec-head">
+          <div class="sec-mark"><span class="sec-no">02</span><span class="eyebrow">Selected work · open source</span><span class="sec-rule" aria-hidden="true"></span></div>
+          <h2 class="sec-title">Things I've built</h2>
+        </div>
+        <aside class="readout" aria-label="Verified numbers">
+          <div class="ro-hd"><span><span class="lt">By the numbers</span><span class="dk">Live readout</span></span><span aria-hidden="true">&mdash;</span></div>
+          <dl class="ro-rows">
+            <div class="ro-row nnrow"><dt>nn.loss</dt><dd class="acc" id="nnLoss">&mdash;</dd></div>
+            <div class="ro-row nnrow"><dt>nn.sgd_steps</dt><dd id="nnSteps">&mdash;</dd></div>
+            <div class="ro-row nnrow"><dt>nn.arch</dt><dd>6-10-8-2 mlp</dd></div>
+            <div class="ro-row"><dt>tests_passing</dt><dd class="good"><span id="countTests" data-count="233">233</span> / 233</dd></div>
+            <div class="ro-row"><dt>public_repos</dt><dd>6</dd></div>
+            <div class="ro-row"><dt>rag.recall@5</dt><dd class="acc">0.80</dd></div>
+            <div class="ro-row"><dt>rag.mrr</dt><dd class="acc">0.68</dd></div>
+            <div class="ro-row"><dt>mcp.tools_wired</dt><dd>10 / 10</dd></div>
+            <div class="ro-row"><dt>video.render</dt><dd>83s · 1 cmd</dd></div>
+            <div class="ro-row"><dt>response_time</dt><dd class="good">&lt; 24h</dd></div>
+          </dl>
+          <p class="ro-note">Proof over promises — nn.loss is the live training loss of the network in the hero above, and every other number is pulled from each repository's own tests and evals, not estimated.</p>
+          <p class="ro-foot">233 tests across 6 repos · CI green</p>
+        </aside>
       </div>
       <div class="plates">
         <figure class="plate reveal">
@@ -953,6 +1068,7 @@
       <li><a href="#contact" data-act="goto">Go to Contact<span class="pal-k">section</span></a></li>
       <li><a href="#top" data-act="goto">Back to top<span class="pal-k">section</span></a></li>
       <li><button type="button" data-act="theme">Switch theme — Paper &#8646; Instrument<span class="pal-k">action</span></button></li>
+      <li><button type="button" data-act="nnreset">Reset the network — re-initialize weights<span class="pal-k">action</span></button></li>
       <li><button type="button" data-act="copy">Copy site URL<span class="pal-k">action</span></button></li>
       <li><a href="https://github.com/ssh071102-code/grounded-chat" target="_blank" rel="noopener" data-act="repo">Open grounded-chat<span class="pal-k">repo</span></a></li>
       <li><a href="https://github.com/ssh071102-code/gig-radar" target="_blank" rel="noopener" data-act="repo">Open gig-radar<span class="pal-k">repo</span></a></li>
@@ -1119,10 +1235,625 @@
         setTheme(doc.getAttribute('data-theme') === 'dark' ? 'light' : 'dark', true);
         return;
       }
+      if (a === 'nnreset') {
+        closePal();
+        if (window.__nn) window.__nn.reset();
+        return;
+      }
       closePal(); /* goto anchors + repo links proceed with default behavior */
     });
     if (hint) hint.addEventListener('click', openPal);
   })();
+</script>
+
+<script>
+/* ==============================================================
+   THE NETWORK THAT LEARNS YOU
+   A real 6-10-8-2 MLP (tanh hidden, linear out) doing forward
+   passes and online momentum-SGD in this tab, trained on the
+   visitor's cursor trajectory to predict 300 ms ahead.
+   Single rAF loop · all buffers preallocated · DPR capped at 2.
+   ============================================================== */
+(function () {
+  'use strict';
+  var canvas = document.getElementById('nncanvas');
+  if (!canvas || !canvas.getContext) return;
+  var ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  var stage = document.getElementById('nnStage');
+  var hero = stage.parentNode;
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- model ---------- */
+  var NI = 6, NH1 = 10, NH2 = 8, NO = 2;
+  var W1 = new Float32Array(NH1 * NI), b1 = new Float32Array(NH1);
+  var W2 = new Float32Array(NH2 * NH1), b2 = new Float32Array(NH2);
+  var W3 = new Float32Array(NO * NH2), b3 = new Float32Array(NO);
+  var vW1 = new Float32Array(W1.length), vb1 = new Float32Array(NH1);
+  var vW2 = new Float32Array(W2.length), vb2 = new Float32Array(NH2);
+  var vW3 = new Float32Array(W3.length), vb3 = new Float32Array(NO);
+  var a0 = new Float32Array(NI), a1 = new Float32Array(NH1), a2 = new Float32Array(NH2), a3 = new Float32Array(NO);
+  var dz1 = new Float32Array(NH1), dz2 = new Float32Array(NH2), dz3 = new Float32Array(NO);
+  var LR = 0.05, MOM = 0.86, CLIP = 2.0;
+  var steps = 0, lossEma = NaN;
+
+  function xavier(w, fin, fout) {
+    var lim = Math.sqrt(6 / (fin + fout));
+    for (var i = 0; i < w.length; i++) w[i] = (Math.random() * 2 - 1) * lim;
+  }
+  function initWeights() {
+    xavier(W1, NI, NH1); xavier(W2, NH1, NH2); xavier(W3, NH2, NO);
+    b1.fill(0); b2.fill(0); b3.fill(0);
+    vW1.fill(0); vW2.fill(0); vW3.fill(0); vb1.fill(0); vb2.fill(0); vb3.fill(0);
+  }
+  function forward() {
+    var i, j, s;
+    for (j = 0; j < NH1; j++) {
+      s = b1[j];
+      for (i = 0; i < NI; i++) s += W1[j * NI + i] * a0[i];
+      a1[j] = Math.tanh(s);
+    }
+    for (j = 0; j < NH2; j++) {
+      s = b2[j];
+      for (i = 0; i < NH1; i++) s += W2[j * NH1 + i] * a1[i];
+      a2[j] = Math.tanh(s);
+    }
+    for (j = 0; j < NO; j++) {
+      s = b3[j];
+      for (i = 0; i < NH2; i++) s += W3[j * NH2 + i] * a2[i];
+      a3[j] = s;
+    }
+  }
+  function clip(g) { return g > CLIP ? CLIP : (g < -CLIP ? -CLIP : g); }
+  function trainOn(k) {
+    var i, j, g, o;
+    o = k * NI;
+    for (i = 0; i < NI; i++) a0[i] = trX[o + i];
+    forward();
+    var e0 = a3[0] - trY[k * NO], e1 = a3[1] - trY[k * NO + 1];
+    var loss = 0.5 * (e0 * e0 + e1 * e1);
+    dz3[0] = e0; dz3[1] = e1;
+    for (j = 0; j < NH2; j++) {
+      g = dz3[0] * W3[j] + dz3[1] * W3[NH2 + j];
+      dz2[j] = g * (1 - a2[j] * a2[j]);
+    }
+    for (j = 0; j < NH1; j++) {
+      g = 0;
+      for (i = 0; i < NH2; i++) g += dz2[i] * W2[i * NH1 + j];
+      dz1[j] = g * (1 - a1[j] * a1[j]);
+    }
+    for (j = 0; j < NO; j++) {
+      o = j * NH2;
+      for (i = 0; i < NH2; i++) {
+        g = clip(dz3[j] * a2[i]);
+        vW3[o + i] = MOM * vW3[o + i] - LR * g; W3[o + i] += vW3[o + i];
+      }
+      vb3[j] = MOM * vb3[j] - LR * clip(dz3[j]); b3[j] += vb3[j];
+    }
+    for (j = 0; j < NH2; j++) {
+      o = j * NH1;
+      for (i = 0; i < NH1; i++) {
+        g = clip(dz2[j] * a1[i]);
+        vW2[o + i] = MOM * vW2[o + i] - LR * g; W2[o + i] += vW2[o + i];
+      }
+      vb2[j] = MOM * vb2[j] - LR * clip(dz2[j]); b2[j] += vb2[j];
+    }
+    for (j = 0; j < NH1; j++) {
+      o = j * NI;
+      for (i = 0; i < NI; i++) {
+        g = clip(dz1[j] * a0[i]);
+        vW1[o + i] = MOM * vW1[o + i] - LR * g; W1[o + i] += vW1[o + i];
+      }
+      vb1[j] = MOM * vb1[j] - LR * clip(dz1[j]); b1[j] += vb1[j];
+    }
+    steps++;
+    lossEma = (lossEma === lossEma) ? lossEma + (loss - lossEma) * 0.008 : loss;
+  }
+
+  /* ---------- rolling trajectory + training pairs ---------- */
+  var HORIZON = 300, SP = 90;
+  var PR = 240;
+  var px = new Float32Array(PR), py = new Float32Array(PR), pt = new Float64Array(PR);
+  var pHead = -1, pCount = 0;
+  function pushPos(x, y, t) {
+    pHead = (pHead + 1) % PR;
+    px[pHead] = x; py[pHead] = y; pt[pHead] = t;
+    if (pCount < PR) pCount++;
+  }
+  function posAt(t, out, oi) {
+    var i = pHead, n = pCount, best = -1, bd = 60, d, ad;
+    while (n-- > 0) {
+      d = pt[i] - t;
+      if (d < -bd) break;
+      ad = d < 0 ? -d : d;
+      if (ad < bd) { bd = ad; best = i; }
+      i = (i - 1 + PR) % PR;
+    }
+    if (best < 0) return false;
+    out[oi] = px[best]; out[oi + 1] = py[best];
+    return true;
+  }
+  var TRN = 240;
+  var trX = new Float32Array(TRN * NI), trY = new Float32Array(TRN * NO);
+  var trHead = -1, trCount = 0;
+  var tmp6 = new Float32Array(NI);
+  function buildPair(now, cx, cy) {
+    if (!posAt(now - HORIZON - 2 * SP, tmp6, 0)) return;
+    if (!posAt(now - HORIZON - SP, tmp6, 2)) return;
+    if (!posAt(now - HORIZON, tmp6, 4)) return;
+    trHead = (trHead + 1) % TRN;
+    trX.set(tmp6, trHead * NI);
+    trY[trHead * NO] = cx; trY[trHead * NO + 1] = cy;
+    if (trCount < TRN) trCount++;
+  }
+
+  /* ---------- layout ---------- */
+  var NN = 26, L1O = 6, L2O = 16, L3O = 24;
+  var layerN = [6, 10, 8, 2], layerX = [0.10, 0.38, 0.65, 0.90];
+  var nodeX = new Float32Array(NN), nodeY = new Float32Array(NN);
+  var W = 1, H = 1, dpr = 1, nodeR = 4;
+  var heroL = 0, heroT = 0;
+  function layout() {
+    var r = stage.getBoundingClientRect();
+    W = Math.max(1, r.width); H = Math.max(1, r.height);
+    heroL = r.left + window.scrollX; heroT = r.top + window.scrollY;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    nodeR = Math.max(3.2, Math.min(5.5, H * 0.009));
+    var k = 0, l, i, n, span = 0.70, top = 0.13;
+    for (l = 0; l < 4; l++) {
+      n = layerN[l];
+      for (i = 0; i < n; i++) {
+        nodeX[k] = layerX[l] * W;
+        nodeY[k] = (top + span * ((i + 0.5) / n)) * H;
+        k++;
+      }
+    }
+  }
+
+  /* ---------- input feed (pointer / synthetic) ---------- */
+  var tgx = 0.5, tgy = 0.42, fx = 0.5, fy = 0.42, lastInput = -1e9;
+  function onPointer(e) {
+    var nx = (e.pageX - heroL) / W, ny = (e.pageY - heroT) / H;
+    if (nx < -0.3 || nx > 1.3 || ny < -0.6 || ny > 1.6) return;
+    tgx = nx < -0.06 ? -0.06 : (nx > 1.06 ? 1.06 : nx);
+    tgy = ny < -0.06 ? -0.06 : (ny > 1.06 ? 1.06 : ny);
+    lastInput = performance.now();
+  }
+  window.addEventListener('pointermove', onPointer, { passive: true });
+  window.addEventListener('pointerdown', onPointer, { passive: true });
+
+  /* ---------- theme palette + sprites ---------- */
+  var isLight = true, C = null;
+  var spNode = null, spPulse = null, spGhost = null, spP0 = null, spP1 = null;
+  function makeSprite(sz, inner, outer) {
+    var c = document.createElement('canvas'); c.width = c.height = sz;
+    var g = c.getContext('2d');
+    var grd = g.createRadialGradient(sz / 2, sz / 2, 0, sz / 2, sz / 2, sz / 2);
+    grd.addColorStop(0, inner); grd.addColorStop(1, outer);
+    g.fillStyle = grd; g.fillRect(0, 0, sz, sz);
+    return c;
+  }
+  function themeDark() {
+    var t = document.documentElement.getAttribute('data-theme');
+    if (t === 'dark') return true;
+    if (t === 'light') return false;
+    return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+  function applyTheme() {
+    isLight = !themeDark();
+    if (isLight) {
+      C = {
+        edge: '#26221c', eA: 0.06, eK: 0.44, eCap: 0.34, wMin: 0.5, wK: 0.9, wCap: 1.4,
+        nodeStroke: 'rgba(20,18,16,.68)', nodeFill: '125,79,28',
+        ghost: '#1f5aa8', ghostHalo: 'rgba(31,90,168,.14)', trail: '31,90,168',
+        cursor: '#141210', link: 'rgba(31,90,168,.30)',
+        p0: 'rgba(20,18,16,.34)', p1: 'rgba(125,79,28,.42)', pCap: 70
+      };
+      spPulse = makeSprite(24, 'rgba(125,79,28,.95)', 'rgba(125,79,28,0)');
+      spGhost = makeSprite(36, 'rgba(31,90,168,.5)', 'rgba(31,90,168,0)');
+      spNode = null; spP0 = null; spP1 = null;
+    } else {
+      C = {
+        edge: '#5ea0ff', eA: 0.05, eK: 0.55, eCap: 0.55, wMin: 0.6, wK: 1.2, wCap: 2.1,
+        nodeStroke: 'rgba(158,196,255,.55)', nodeFill: '158,196,255',
+        ghost: '#3fd68f', ghostHalo: 'rgba(63,214,143,.16)', trail: '63,214,143',
+        cursor: '#e8ecf3', link: 'rgba(63,214,143,.28)',
+        p0: null, p1: null, pCap: 170
+      };
+      spNode = makeSprite(64, 'rgba(94,160,255,.8)', 'rgba(94,160,255,0)');
+      spPulse = makeSprite(24, 'rgba(186,214,255,.95)', 'rgba(94,160,255,0)');
+      spGhost = makeSprite(40, 'rgba(63,214,143,.55)', 'rgba(63,214,143,0)');
+      spP0 = makeSprite(16, 'rgba(122,166,240,.55)', 'rgba(122,166,240,0)');
+      spP1 = makeSprite(16, 'rgba(226,236,250,.8)', 'rgba(150,190,255,0)');
+    }
+    pTarget = Math.min(W < 720 ? 60 : 160, C.pCap);
+    if (pActive > pTarget) pActive = pTarget;
+  }
+
+  /* ---------- particles: raw data condensing into the input layer ---------- */
+  var PMAX = 200;
+  var Px = new Float32Array(PMAX), Py = new Float32Array(PMAX), Pph = new Float32Array(PMAX);
+  var Ptier = new Uint8Array(PMAX);
+  var pTarget = 0, pActive = 0;
+  var inGlow = new Float32Array(NI), outGlow = new Float32Array(NO);
+  function seedParticle(i, avoidNode) {
+    var tries = 0, nx2, ny2, dx, dy;
+    do {
+      nx2 = Math.random() * W; ny2 = Math.random() * H;
+      dx = nx2 - nodeX[avoidNode]; dy = ny2 - nodeY[avoidNode];
+      tries++;
+    } while (dx * dx + dy * dy < 22500 && tries < 8);
+    Px[i] = nx2; Py[i] = ny2;
+    Pph[i] = Math.random() * 6.283;
+    Ptier[i] = Math.random() < 0.32 ? 1 : 0;
+  }
+  var BMAX = 64;
+  var Bx = new Float32Array(BMAX), By = new Float32Array(BMAX);
+  var Bvx = new Float32Array(BMAX), Bvy = new Float32Array(BMAX);
+  var Blife = new Float32Array(BMAX), Bmax = new Float32Array(BMAX);
+  var bN = 0;
+  function spawnSweep() {
+    var n = 26, i;
+    for (i = 0; i < n && bN < BMAX; i++, bN++) {
+      Bx[bN] = -30 - Math.random() * 90;
+      By[bN] = Math.random() * H;
+      Bvx[bN] = (W + 160) / 420;
+      Bvy[bN] = (Math.random() - 0.5) * 0.05;
+      Blife[bN] = Bmax[bN] = 380 + Math.random() * 40;
+    }
+  }
+  function spawnConverge() {
+    var cx = (nodeX[L3O] + nodeX[L3O + 1]) / 2, cy = (nodeY[L3O] + nodeY[L3O + 1]) / 2;
+    var i, a, s;
+    for (i = 0; i < 18 && bN < BMAX; i++, bN++) {
+      a = Math.random() * 6.283; s = 0.05 + Math.random() * 0.13;
+      Bx[bN] = cx; By[bN] = cy;
+      Bvx[bN] = Math.cos(a) * s; Bvy[bN] = Math.sin(a) * s;
+      Blife[bN] = Bmax[bN] = 340 + Math.random() * 60;
+    }
+  }
+  var TH = [0.1, 0.05, 0.02], thIdx = 0;
+
+  /* ---------- signal pulses along strongest weights ---------- */
+  var PUMAX = 9;
+  var puA = new Uint8Array(PUMAX * 4);
+  var puT = new Float32Array(PUMAX), puOn = new Uint8Array(PUMAX);
+  var puAcc = 0;
+  function argmaxW(Wm, rows, cols, col) {
+    if (Math.random() < 0.35) return (Math.random() * rows) | 0;
+    var best = 0, bv = -1, j, v;
+    for (j = 0; j < rows; j++) {
+      v = Wm[j * cols + col]; if (v < 0) v = -v;
+      if (v > bv) { bv = v; best = j; }
+    }
+    return best;
+  }
+  function spawnPulse() {
+    var s = -1, i;
+    for (i = 0; i < PUMAX; i++) if (!puOn[i]) { s = i; break; }
+    if (s < 0) return;
+    var n0 = (Math.random() * NI) | 0;
+    var n1 = argmaxW(W1, NH1, NI, n0);
+    var n2 = argmaxW(W2, NH2, NH1, n1);
+    var n3 = argmaxW(W3, NO, NH2, n2);
+    puA[s * 4] = n0; puA[s * 4 + 1] = L1O + n1; puA[s * 4 + 2] = L2O + n2; puA[s * 4 + 3] = L3O + n3;
+    puT[s] = 0; puOn[s] = 1;
+  }
+
+  /* ---------- ghost trail ---------- */
+  var TRL = 26;
+  var Tx = new Float32Array(TRL), Ty = new Float32Array(TRL);
+  var tHead = -1, tCount = 0;
+  var gx = 0, gy = 0;
+
+  /* ---------- drawing ---------- */
+  function drawEdgeLayer(Wm, rows, cols, aOff, bOff) {
+    var j, i, w, a, lw, x2, y2;
+    for (j = 0; j < rows; j++) {
+      x2 = nodeX[bOff + j]; y2 = nodeY[bOff + j];
+      for (i = 0; i < cols; i++) {
+        w = Wm[j * cols + i]; if (w < 0) w = -w;
+        a = C.eA + w * C.eK; if (a > C.eCap) a = C.eCap;
+        lw = C.wMin + w * C.wK; if (lw > C.wCap) lw = C.wCap;
+        ctx.globalAlpha = a; ctx.lineWidth = lw;
+        ctx.beginPath();
+        ctx.moveTo(nodeX[aOff + i], nodeY[aOff + i]);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+    }
+  }
+  function nodeGlowVal(k) {
+    var v;
+    if (k < L1O) { v = a0[k]; if (v < 0) v = -v; v = v * 0.55 + inGlow[k]; }
+    else if (k < L2O) { v = a1[k - L1O]; if (v < 0) v = -v; }
+    else if (k < L3O) { v = a2[k - L2O]; if (v < 0) v = -v; }
+    else { v = a3[k - L3O]; if (v < 0) v = -v; if (v > 1) v = 1; v = v * 0.7 + outGlow[k - L3O]; }
+    return v > 1 ? 1 : v;
+  }
+  function draw(now) {
+    ctx.clearRect(0, 0, W, H);
+    var i, k, v, sz, frac, seg, ax, ay, bx2, by2, lx, ly;
+    /* particles */
+    if (isLight) {
+      ctx.fillStyle = C.p0;
+      for (i = 0; i < pActive; i++) if (!Ptier[i]) ctx.fillRect(Px[i], Py[i], 1.6, 1.6);
+      ctx.fillStyle = C.p1;
+      for (i = 0; i < pActive; i++) if (Ptier[i]) ctx.fillRect(Px[i] - 0.5, Py[i] - 0.5, 2.4, 2.4);
+    } else {
+      ctx.globalAlpha = 0.55;
+      for (i = 0; i < pActive; i++) if (!Ptier[i]) ctx.drawImage(spP0, Px[i] - 2.5, Py[i] - 2.5, 5, 5);
+      ctx.globalAlpha = 0.9;
+      for (i = 0; i < pActive; i++) if (Ptier[i]) ctx.drawImage(spP1, Px[i] - 3.5, Py[i] - 3.5, 7, 7);
+      ctx.globalAlpha = 1;
+    }
+    /* burst particles */
+    for (i = 0; i < bN; i++) {
+      frac = Blife[i] / Bmax[i];
+      ctx.globalAlpha = Math.sin(3.1416 * (1 - frac)) * (isLight ? 0.55 : 0.85) * frac + 0.05;
+      ctx.drawImage(spPulse, Bx[i] - 4, By[i] - 4, 8, 8);
+    }
+    ctx.globalAlpha = 1;
+    /* edges */
+    ctx.strokeStyle = C.edge; ctx.lineCap = 'round';
+    drawEdgeLayer(W1, NH1, NI, 0, L1O);
+    drawEdgeLayer(W2, NH2, NH1, L1O, L2O);
+    drawEdgeLayer(W3, NO, NH2, L2O, L3O);
+    ctx.globalAlpha = 1;
+    /* pulses */
+    for (i = 0; i < PUMAX; i++) {
+      if (!puOn[i]) continue;
+      seg = puT[i] | 0; if (seg > 2) seg = 2;
+      frac = puT[i] - seg;
+      k = puA[i * 4 + seg]; ax = nodeX[k]; ay = nodeY[k];
+      k = puA[i * 4 + seg + 1]; bx2 = nodeX[k]; by2 = nodeY[k];
+      lx = ax + (bx2 - ax) * frac; ly = ay + (by2 - ay) * frac;
+      ctx.globalAlpha = 0.95;
+      ctx.drawImage(spPulse, lx - 5, ly - 5, 10, 10);
+    }
+    ctx.globalAlpha = 1;
+    /* nodes */
+    for (k = 0; k < NN; k++) {
+      v = nodeGlowVal(k);
+      if (!isLight && spNode) {
+        sz = nodeR * (3.4 + v * 4.2);
+        ctx.globalAlpha = 0.12 + v * 0.55;
+        ctx.drawImage(spNode, nodeX[k] - sz / 2, nodeY[k] - sz / 2, sz, sz);
+      }
+      ctx.globalAlpha = 1;
+      ctx.beginPath();
+      ctx.arc(nodeX[k], nodeY[k], nodeR, 0, 6.2832);
+      ctx.fillStyle = 'rgba(' + C.nodeFill + ',' + (0.10 + v * 0.72).toFixed(3) + ')';
+      ctx.fill();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = C.nodeStroke;
+      ctx.stroke();
+    }
+    /* output nodes wired to the ghost: the two outputs ARE its coordinates */
+    ctx.strokeStyle = C.link; ctx.lineWidth = 1; ctx.globalAlpha = 1;
+    ctx.beginPath();
+    ctx.moveTo(nodeX[L3O], nodeY[L3O]); ctx.lineTo(gx, gy);
+    ctx.moveTo(nodeX[L3O + 1], nodeY[L3O + 1]); ctx.lineTo(gx, gy);
+    ctx.stroke();
+    /* ghost trail */
+    for (i = 0; i < tCount; i++) {
+      k = (tHead - i + TRL) % TRL;
+      ctx.globalAlpha = 0.3 * (1 - i / TRL);
+      ctx.fillStyle = 'rgba(' + C.trail + ',1)';
+      ctx.fillRect(Tx[k] - 1, Ty[k] - 1, 2, 2);
+    }
+    ctx.globalAlpha = 1;
+    /* ghost prediction dot */
+    ctx.drawImage(spGhost, gx - 11, gy - 11, 22, 22);
+    ctx.beginPath(); ctx.arc(gx, gy, 3, 0, 6.2832);
+    ctx.fillStyle = C.ghost; ctx.fill();
+    /* real cursor dot */
+    lx = fx * W; ly = fy * H;
+    ctx.beginPath(); ctx.arc(lx, ly, 5.5, 0, 6.2832);
+    ctx.strokeStyle = C.cursor; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.8; ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.beginPath(); ctx.arc(lx, ly, 1.8, 0, 6.2832);
+    ctx.fillStyle = C.cursor; ctx.fill();
+  }
+
+  /* ---------- instrumentation ---------- */
+  var elL1 = document.getElementById('nnLoss'), elL2 = document.getElementById('nnLossChip');
+  var elS1 = document.getElementById('nnSteps'), elS2 = document.getElementById('nnStepsChip');
+  var lastLs = '', lastSs = '';
+  function updateDom() {
+    var ls = (lossEma === lossEma) ? lossEma.toFixed(4) : '—';
+    var ss = steps > 0 ? String(steps) : '—';
+    if (ls !== lastLs) {
+      lastLs = ls;
+      if (elL1) elL1.textContent = ls;
+      if (elL2) elL2.textContent = ls;
+    }
+    if (ss !== lastSs) {
+      lastSs = ss;
+      if (elS1) elS1.textContent = ss;
+      if (elS2) elS2.textContent = ss;
+    }
+  }
+
+  /* ---------- main loop ---------- */
+  var raf = 0, last = 0, frames = 0, trainSteps = 4, trainAcc = 0, fpsEma = 60;
+  var NNAPI = {
+    arch: '6-10-8-2 mlp', loss: NaN, steps: 0, frames: 0,
+    running: false, particles: 0, pred: { x: 0, y: 0 },
+    reset: reset
+  };
+  window.__nn = NNAPI;
+  function loop(ts) {
+    raf = requestAnimationFrame(loop);
+    var dt = last ? ts - last : 16.7; last = ts;
+    if (dt > 64) dt = 64;
+    frames++;
+    fpsEma += (1000 / (dt < 1 ? 1 : dt) - fpsEma) * 0.05;
+    var now = ts, i;
+    /* input feed: pointer, or slow lissajous when idle 4s+ */
+    if (now - lastInput > 4000) {
+      tgx = 0.5 + 0.37 * Math.sin(now * 0.00071 + 0.8);
+      tgy = 0.44 + 0.30 * Math.sin(now * 0.000453);
+    }
+    fx += (tgx - fx) * 0.3; fy += (tgy - fy) * 0.3;
+    var nxx = fx * 2 - 1, nyy = fy * 2 - 1;
+    pushPos(nxx, nyy, now);
+    buildPair(now, nxx, nyy);
+    /* online SGD on the rolling buffer — time-budgeted so the training
+       rate is the same at 60 Hz, 144 Hz, or an unthrottled headless rAF */
+    if (trCount > 8) {
+      trainAcc += dt * 0.06 * trainSteps;
+      var nSteps = trainAcc | 0;
+      if (nSteps > 8) nSteps = 8;
+      trainAcc -= nSteps;
+      for (i = 0; i < nSteps; i++) trainOn((Math.random() * trCount) | 0);
+      while (thIdx < TH.length && steps > 120 && lossEma < TH[thIdx]) { spawnConverge(); thIdx++; }
+    }
+    /* display forward pass on the live trajectory */
+    if (!posAt(now - 2 * SP, a0, 0)) { a0[0] = nxx; a0[1] = nyy; }
+    if (!posAt(now - SP, a0, 2)) { a0[2] = nxx; a0[3] = nyy; }
+    a0[4] = nxx; a0[5] = nyy;
+    forward();
+    var pxx = a3[0] < -1.25 ? -1.25 : (a3[0] > 1.25 ? 1.25 : a3[0]);
+    var pyy = a3[1] < -1.25 ? -1.25 : (a3[1] > 1.25 ? 1.25 : a3[1]);
+    pxx = (pxx + 1) / 2 * W; pyy = (pyy + 1) / 2 * H;
+    if (gx === 0 && gy === 0) { gx = pxx; gy = pyy; }
+    gx += (pxx - gx) * 0.3; gy += (pyy - gy) * 0.3;
+    tHead = (tHead + 1) % TRL; Tx[tHead] = gx; Ty[tHead] = gy;
+    if (tCount < TRL) tCount++;
+    /* pulses */
+    puAcc += dt;
+    if (puAcc > 260) { puAcc = 0; spawnPulse(); }
+    for (i = 0; i < PUMAX; i++) {
+      if (!puOn[i]) continue;
+      puT[i] += dt / 230;
+      if (puT[i] >= 3) { outGlow[puA[i * 4 + 3] - L3O] = 1; puOn[i] = 0; }
+    }
+    /* ambient particles drift toward their input node + the cursor */
+    var dts = dt / 1000, node, dx, dy, d, sp2, cx2 = fx * W, cy2 = fy * H;
+    for (i = 0; i < pActive; i++) {
+      node = i % NI;
+      dx = nodeX[node] - Px[i]; dy = nodeY[node] - Py[i];
+      d = Math.sqrt(dx * dx + dy * dy) + 0.001;
+      sp2 = (9 + Ptier[i] * 9 + (i % 5) * 1.5) * dts;
+      Px[i] += dx / d * sp2 + Math.sin(now * 0.0005 + Pph[i]) * 0.3;
+      Py[i] += dy / d * sp2 + Math.cos(now * 0.00045 + Pph[i] * 1.7) * 0.3;
+      Px[i] += (cx2 - Px[i]) * 0.0005 * dt * 0.06;
+      Py[i] += (cy2 - Py[i]) * 0.0005 * dt * 0.06;
+      if (d < 9) { inGlow[node] = 1; seedParticle(i, node); }
+    }
+    for (i = 0; i < NI; i++) inGlow[i] *= 0.93;
+    for (i = 0; i < NO; i++) outGlow[i] *= 0.93;
+    /* moment bursts */
+    for (i = 0; i < bN; i++) {
+      Blife[i] -= dt;
+      if (Blife[i] <= 0) {
+        bN--;
+        Bx[i] = Bx[bN]; By[i] = By[bN]; Bvx[i] = Bvx[bN]; Bvy[i] = Bvy[bN];
+        Blife[i] = Blife[bN]; Bmax[i] = Bmax[bN];
+        i--;
+        continue;
+      }
+      Bx[i] += Bvx[i] * dt; By[i] += Bvy[i] * dt;
+    }
+    draw(now);
+    /* frame-budget governor: particles degrade before the network does */
+    if (frames % 90 === 0) {
+      if (fpsEma < 50) {
+        if (pActive > 40) pActive = (pActive * 0.75) | 0;
+        else if (trainSteps > 1) trainSteps--;
+      } else if (fpsEma > 56) {
+        if (trainSteps < 4) trainSteps++;
+        else if (pActive < pTarget) pActive = Math.min(pTarget, pActive + 12);
+      }
+    }
+    if (frames % 8 === 0) updateDom();
+    NNAPI.loss = lossEma; NNAPI.steps = steps; NNAPI.frames = frames;
+    NNAPI.particles = pActive; NNAPI.pred.x = gx; NNAPI.pred.y = gy;
+  }
+
+  /* ---------- lifecycle: pause offscreen + tab hidden ---------- */
+  var inView = true, docHidden = false;
+  function start() {
+    if (!raf && inView && !docHidden && !reduced) {
+      last = 0;
+      raf = requestAnimationFrame(loop);
+    }
+    NNAPI.running = !!raf;
+  }
+  function stop() {
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+    NNAPI.running = false;
+    updateDom();
+  }
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (en) {
+      inView = en[0].isIntersecting;
+      inView ? start() : stop();
+    }, { threshold: 0.02 }).observe(stage);
+  }
+  document.addEventListener('visibilitychange', function () {
+    docHidden = !!document.hidden;
+    docHidden ? stop() : start();
+  });
+
+  /* ---------- reduced motion: one static forward pass, no loop ---------- */
+  function drawStatic() {
+    a0[0] = -0.52; a0[1] = 0.14; a0[2] = -0.2; a0[3] = -0.02; a0[4] = 0.08; a0[5] = -0.16;
+    forward();
+    fx = (a0[4] + 1) / 2; fy = (a0[5] + 1) / 2;
+    var pxx = a3[0] < -1 ? -1 : (a3[0] > 1 ? 1 : a3[0]);
+    var pyy = a3[1] < -1 ? -1 : (a3[1] > 1 ? 1 : a3[1]);
+    gx = (pxx + 1) / 2 * W; gy = (pyy + 1) / 2 * H;
+    pActive = 0; bN = 0; tCount = 0;
+    draw(0);
+    NNAPI.particles = 0;
+  }
+
+  /* ---------- reset (also wired to the command palette) ---------- */
+  function reset() {
+    initWeights();
+    steps = 0; lossEma = NaN; thIdx = 0;
+    trHead = -1; trCount = 0; pHead = -1; pCount = 0;
+    tHead = -1; tCount = 0;
+    inGlow.fill(0); outGlow.fill(0);
+    for (var i = 0; i < PUMAX; i++) puOn[i] = 0;
+    NNAPI.steps = 0; NNAPI.loss = NaN;
+    lastLs = ''; lastSs = '';
+    updateDom();
+    if (reduced) drawStatic();
+  }
+
+  /* ---------- theme reactivity: reskin live + power-on sweep ---------- */
+  if ('MutationObserver' in window) {
+    new MutationObserver(function () {
+      applyTheme();
+      if (reduced) drawStatic();
+      else spawnSweep();
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  }
+
+  /* ---------- boot ---------- */
+  layout();
+  applyTheme();
+  initWeights();
+  pActive = pTarget;
+  for (var bi = 0; bi < PMAX; bi++) seedParticle(bi, bi % NI);
+  if ('ResizeObserver' in window) {
+    new ResizeObserver(function () {
+      layout();
+      pTarget = Math.min(W < 720 ? 60 : 160, C.pCap);
+      if (pActive > pTarget) pActive = pTarget;
+      if (reduced) drawStatic();
+    }).observe(stage);
+  } else {
+    window.addEventListener('resize', function () { layout(); if (reduced) drawStatic(); });
+  }
+  if (reduced) { drawStatic(); updateDom(); }
+  else start();
+})();
 </script>
 
 </body>
