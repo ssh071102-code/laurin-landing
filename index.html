@@ -1479,9 +1479,14 @@
    to the hand and learns genuine anticipation.
    The scene is pseudo-3D: nodes and particles carry a z depth,
    drawn through a focal-plane-locked pinhole projection with a
-   slowly drifting, pointer-leaning camera. The cursor, ghost,
-   and their green links live on the z = 0 focal plane, so the
-   prediction geometry stays pixel-true.
+   slowly drifting, pointer-leaning camera. Six particle parallax
+   bands sit between a near out-of-focus bokeh layer and a far
+   haze layer; alpha and ink density fall off with depth. The
+   cursor, ghost, and their green listening threads live on the
+   z = 0 focal plane — each thread is a quadratic bezier whose
+   control point chases the true midpoint through a critically
+   damped spring, so fast sweeps bow the line instead of
+   slashing it. Endpoints are never faked.
    Single rAF loop · all buffers preallocated · DPR capped at 2.
    ============================================================== */
 (function () {
@@ -1672,24 +1677,28 @@
   var KAX = [kX0, kX1, kX2, kX3], KAY = [kY0, kY1, kY2, kY3];
   var KAZ = [kZ0, kZ1, kZ2, kZ3];
   var SPD1 = [0.26, 0.30, 0.24, 0.10], ROW1 = [0.10, 0.36, 0.62, 0.88];
-  /* depth: per-layer z (input far, output near) + per-node jitter; the work
-     constellation scatters in z, the contact line flattens to the focal plane */
-  var LZ = [260, 100, -60, -220];
-  var FOC = 1150, zScale = 1;
+  /* depth: per-layer z (input far, output near) + per-node jitter wide enough
+     that no layer reads as a flat plane; the work constellation scatters in z,
+     the contact line flattens to the focal plane. Short focal length for
+     strong perspective — near-layer swing stays inside the frame margins
+     because keyframes are counter-scaled and jitter shrinks on near layers. */
+  var LZ = [420, 170, -105, -280], JZA = [220, 220, 160, 100];
+  var FOC = 830, zScale = 1;
   var prX = new Float32Array(NN), prY = new Float32Array(NN);
   var prS = new Float32Array(NN), prA = new Float32Array(NN);
+  var prT = new Float32Array(NN); /* 0 = deep haze, 1 = near focus */
   var zOrder = new Uint8Array(NN);
   var camKX = 0, camKY = 0, leanX = 0, leanY = 0;
   function fr01(x) { return x - Math.floor(x); }
   function buildKeyframes() {
     var top = jn ? 0.22 : 0.13, span = jn ? 0.64 : 0.70;
-    zScale = W < 720 ? 0.6 : 1;
+    zScale = W < 720 ? 0.55 : (W < 900 ? 0.65 : (W < 1150 ? 0.8 : 1));
     var k = 0, l, i, n, c, jz;
     for (l = 0; l < 4; l++) {
       n = layerN[l];
       for (i = 0; i < n; i++) {
         c = (i + 0.5) / n;
-        jz = (fr01(k * 0.618034 + 0.71) - 0.5) * 110;
+        jz = (fr01(k * 0.618034 + 0.71) - 0.5) * JZA[l];
         kX0[k] = layerX[l] * W;
         kY0[k] = (top + span * c) * H;
         kZ0[k] = (LZ[l] + jz) * zScale;
@@ -1702,7 +1711,7 @@
     for (k = 0; k < NN; k++) {
       kX2[k] = (0.06 + 0.88 * fr01(k * 0.618034 + 0.13)) * W;
       kY2[k] = (0.10 + 0.78 * fr01(k * 0.381966 + 0.37)) * H;
-      kZ2[k] = (fr01(k * 0.754878 + 0.29) - 0.5) * 560 * zScale;
+      kZ2[k] = (fr01(k * 0.754878 + 0.29) - 0.5) * 700 * zScale;
       kX3[k] = (0.06 + 0.88 * (k / (NN - 1))) * W;
       kY3[k] = 0.84 * H;
       kZ3[k] = 0;
@@ -1784,7 +1793,10 @@
     nodeR = Math.max(3.2, Math.min(5.5, H * 0.009));
     FR = W < 720 ? 110 : 140; FR2 = FR * FR;
     buildKeyframes();
-    for (var b2 = 0; b2 < 4; b2++) pbS[b2] = FOC / (FOC + PBZ[b2] * zScale);
+    for (var b2 = 0; b2 < PBN; b2++) pbS[b2] = FOC / (FOC + PBZ[b2] * zScale);
+    bkS = FOC / (FOC + BKZ * zScale);
+    hzS = FOC / (FOC + HZZ * zScale);
+    seedDepthDressing();
     measureAnchors();
     if (jn) applyJourney();
     else for (var k = 0; k < NN; k++) { nodeX[k] = kX0[k]; nodeY[k] = kY0[k]; nodeZ[k] = kZ0[k]; }
@@ -1797,7 +1809,7 @@
      cursor, ghost, and their green links stay pixel-true on the focal plane. */
   var sortAcc = 99;
   function updateCamera(now, dts) {
-    var lx2 = (tgx - 0.5) * 0.17, ly2 = (tgy - 0.45) * 0.15;
+    var lx2 = (tgx - 0.5) * 0.20, ly2 = (tgy - 0.45) * 0.17;
     var lk = dts > 0 ? 1 - Math.exp(-dts * 3) : 1;
     leanX += (lx2 - leanX) * lk; leanY += (ly2 - leanY) * lk;
     camKX = 0.115 * Math.sin(now * 0.00019) + leanX;
@@ -1813,7 +1825,9 @@
       prY[k] = cy + (nodeY[k] - cy + z * camKY) * s;
       prS[k] = s;
       if (s < s0) s0 = s; if (s > s1) s1 = s;
-      t = (s - 0.76) * 2.1; if (t < 0) t = 0; else if (t > 1) t = 1;
+      /* depth fog: alpha (and node saturation) fall off toward the far haze */
+      t = (s - 0.66) * 1.15; if (t < 0) t = 0; else if (t > 1) t = 1;
+      prT[k] = t;
       prA[k] = C.dA0 + C.dA1 * t;
     }
     depthSMin = s0; depthSMax = s1;
@@ -1827,15 +1841,47 @@
       }
     }
   }
-  /* particle parallax bands (near → far): band = i & 3 */
-  var PBZ = [-70, 60, 180, 320];
-  var pbS = [1, 1, 1, 1], pbA = [1, 0.86, 0.68, 0.5];
-  var pbOffX = [0, 0, 0, 0], pbOffY = [0, 0, 0, 0];
+  /* particle parallax bands (near → far): fixed per-particle band from a
+     latin-square index so bands decorrelate from input-node assignment.
+     The two far bands render as a soft out-of-focus wash. Beyond them sit
+     two dressing strata: a near bokeh layer in front of everything and a
+     far haze layer behind everything — both deterministic, so the
+     reduced-motion static plate composes the same volume. */
+  var PBN = 6;
+  var PBZ = [-260, -90, 60, 210, 380, 560];
+  var pbS = [1, 1, 1, 1, 1, 1], pbA = [1, 0.9, 0.78, 0.64, 0.5, 0.38];
+  var pbOffX = [0, 0, 0, 0, 0, 0], pbOffY = [0, 0, 0, 0, 0, 0];
+  var Pband = new Uint8Array(200);
+  var BKN = 7, HZN = 3, BKZ = -420, HZZ = 620, bkS = 1, hzS = 1;
+  var bkX = new Float32Array(BKN), bkY = new Float32Array(BKN);
+  var bkPh = new Float32Array(BKN), bkSz = new Float32Array(BKN);
+  var hzX = new Float32Array(HZN), hzY = new Float32Array(HZN);
+  var hzPh = new Float32Array(HZN), hzSz = new Float32Array(HZN);
+  var bkOffX = 0, bkOffY = 0, hzOffX = 0, hzOffY = 0;
+  function seedDepthDressing() {
+    var i;
+    for (i = 0; i < BKN; i++) {
+      /* bokeh bases sit right of the hero copy column; drift + parallax are
+         bounded, and the scrim owns legibility over any residue */
+      bkX[i] = (0.52 + 0.44 * fr01(i * 0.618034 + 0.23)) * W;
+      bkY[i] = (0.06 + 0.88 * fr01(i * 0.381966 + 0.53)) * H;
+      bkSz[i] = 84 + 96 * fr01(i * 0.754878 + 0.11);
+      bkPh[i] = 6.283 * fr01(i * 0.437 + 0.71);
+    }
+    for (i = 0; i < HZN; i++) {
+      hzX[i] = (0.14 + 0.72 * fr01(i * 0.618034 + 0.41)) * W;
+      hzY[i] = (0.12 + 0.62 * fr01(i * 0.381966 + 0.19)) * H;
+      hzSz[i] = 360 + 260 * fr01(i * 0.754878 + 0.61);
+      hzPh[i] = 6.283 * fr01(i * 0.437 + 0.29);
+    }
+  }
   function updateBandOffsets() {
-    for (var b = 0; b < 4; b++) {
+    for (var b = 0; b < PBN; b++) {
       pbOffX[b] = PBZ[b] * zScale * camKX * pbS[b];
       pbOffY[b] = PBZ[b] * zScale * camKY * pbS[b];
     }
+    bkOffX = BKZ * zScale * camKX * bkS; bkOffY = BKZ * zScale * camKY * bkS;
+    hzOffX = HZZ * zScale * camKX * hzS; hzOffY = HZZ * zScale * camKY * hzS;
   }
 
   /* ---------- input feed (pointer / synthetic) ----------
@@ -1903,11 +1949,24 @@
   /* ---------- theme palette + sprites ---------- */
   var isLight = true, C = null;
   var spNode = null, spPulse = null, spGhost = null, spP0 = null, spP1 = null, spLens = null, spFar = null;
+  var spNodeNear = null, spInk = null, spBokeh = null, spHaze = null;
   function makeSprite(sz, inner, outer) {
     var c = document.createElement('canvas'); c.width = c.height = sz;
     var g = c.getContext('2d');
     var grd = g.createRadialGradient(sz / 2, sz / 2, 0, sz / 2, sz / 2, sz / 2);
     grd.addColorStop(0, inner); grd.addColorStop(1, outer);
+    g.fillStyle = grd; g.fillRect(0, 0, sz, sz);
+    return c;
+  }
+  /* pre-rendered defocus disc: wide soft shoulder, no per-frame blur filters */
+  function makeSoft(sz, rgb, a) {
+    var c = document.createElement('canvas'); c.width = c.height = sz;
+    var g = c.getContext('2d');
+    var grd = g.createRadialGradient(sz / 2, sz / 2, 0, sz / 2, sz / 2, sz / 2);
+    grd.addColorStop(0, 'rgba(' + rgb + ',' + a + ')');
+    grd.addColorStop(0.45, 'rgba(' + rgb + ',' + (a * 0.7).toFixed(3) + ')');
+    grd.addColorStop(0.8, 'rgba(' + rgb + ',' + (a * 0.22).toFixed(3) + ')');
+    grd.addColorStop(1, 'rgba(' + rgb + ',0)');
     g.fillStyle = grd; g.fillRect(0, 0, sz, sz);
     return c;
   }
@@ -1922,33 +1981,42 @@
     if (isLight) {
       C = {
         edge: '#26221c', eA: 0.06, eK: 0.44, eCap: 0.34, wMin: 0.5, wK: 0.9, wCap: 1.4,
-        nodeStroke: 'rgba(20,18,16,.68)', nodeFill: '125,79,28',
+        nodeStroke: 'rgba(20,18,16,.68)', nf: [125, 79, 28], nfFar: [122, 110, 92],
         ghost: '#1f5aa8', ghostHalo: 'rgba(31,90,168,.14)', trail: '31,90,168',
         cursor: '#141210', link: 'rgba(31,90,168,.30)', ring: '#7d4f1c',
         p0: 'rgba(20,18,16,.34)', p1: 'rgba(125,79,28,.42)', pCap: 70,
-        dA0: 0.45, dA1: 0.55 /* ink wash: near = dense ink, far = faint */
+        dA0: 0.40, dA1: 0.60, /* ink density: near = dense ink, far = faint wash */
+        bokehA: 0.07, hazeA: 0.035
       };
       spPulse = makeSprite(24, 'rgba(125,79,28,.95)', 'rgba(125,79,28,0)');
       spGhost = makeSprite(36, 'rgba(31,90,168,.5)', 'rgba(31,90,168,0)');
       spLens = makeSprite(256, 'rgba(125,79,28,.32)', 'rgba(125,79,28,0)');
       spFar = makeSprite(20, 'rgba(90,72,50,.5)', 'rgba(90,72,50,0)');
-      spNode = null; spP0 = null; spP1 = null;
+      spInk = makeSoft(64, '110,88,58', 0.5);
+      spBokeh = makeSoft(160, '104,88,64', 0.5);
+      spHaze = makeSoft(256, '128,104,66', 0.3);
+      spNode = null; spNodeNear = null; spP0 = null; spP1 = null;
     } else {
       C = {
         edge: '#5ea0ff', eA: 0.05, eK: 0.55, eCap: 0.55, wMin: 0.6, wK: 1.2, wCap: 2.1,
-        nodeStroke: 'rgba(158,196,255,.55)', nodeFill: '158,196,255',
+        nodeStroke: 'rgba(158,196,255,.55)', nf: [158, 196, 255], nfFar: [104, 122, 156],
         ghost: '#3fd68f', ghostHalo: 'rgba(63,214,143,.16)', trail: '63,214,143',
         cursor: '#e8ecf3', link: 'rgba(63,214,143,.28)', ring: '#5ea0ff',
         p0: null, p1: null, pCap: 170,
-        dA0: 0.28, dA1: 0.72 /* instrument depth: glow falls off with distance */
+        dA0: 0.24, dA1: 0.76, /* instrument depth: glow falls off with distance */
+        bokehA: 0.1, hazeA: 0.08
       };
       spNode = makeSprite(64, 'rgba(94,160,255,.8)', 'rgba(94,160,255,0)');
+      spNodeNear = makeSoft(96, '110,170,255', 0.6);
       spPulse = makeSprite(24, 'rgba(186,214,255,.95)', 'rgba(94,160,255,0)');
       spGhost = makeSprite(40, 'rgba(63,214,143,.55)', 'rgba(63,214,143,0)');
       spLens = makeSprite(256, 'rgba(94,160,255,.36)', 'rgba(94,160,255,0)');
       spP0 = makeSprite(16, 'rgba(122,166,240,.55)', 'rgba(122,166,240,0)');
       spP1 = makeSprite(16, 'rgba(226,236,250,.8)', 'rgba(150,190,255,0)');
       spFar = makeSprite(20, 'rgba(122,166,240,.4)', 'rgba(122,166,240,0)');
+      spBokeh = makeSoft(160, '140,178,244', 0.5);
+      spHaze = makeSoft(256, '96,146,224', 0.32);
+      spInk = null;
     }
     pTarget = Math.min(W < 720 ? 60 : 160, C.pCap);
     if (pActive > pTarget) pActive = pTarget;
@@ -2064,6 +2132,52 @@
   var tHead = -1, tCount = 0;
   var gx = 0, gy = 0;
 
+  /* ---------- listening threads: output nodes → ghost ----------
+     Each link is a quadratic bezier. Endpoints are always the true projected
+     output node and the smoothed ghost; only the control point has feel — it
+     chases the segment midpoint (plus a light fishing-line sag) through a
+     critically damped spring (omega = 9 → settles in ~0.65 s), so a fast
+     sweep bows the thread instead of slashing a rigid line across the hero.
+     Excursion is clamped so a pointer teleport can never become a
+     full-screen sweep. All state preallocated. */
+  var thCX = new Float32Array(2), thCY = new Float32Array(2);
+  var thVX = new Float32Array(2), thVY = new Float32Array(2);
+  var thInit = false, thPresence = 1, thLag = 0;
+  var TH_K = 81, TH_D = 18, TH_LAGMAX = 240;
+  function updateThreads(dts) {
+    var li, ax, ay, dxl, dyl, len, sag, tx, ty, d, lag = 0;
+    for (li = 0; li < 2; li++) {
+      ax = prX[L3O + li]; ay = prY[L3O + li];
+      dxl = gx - ax; dyl = gy - ay;
+      len = Math.sqrt(dxl * dxl + dyl * dyl);
+      sag = len * 0.07; if (sag > 26) sag = 26;
+      tx = ax + dxl * 0.5; ty = ay + dyl * 0.5 + sag;
+      if (!thInit) {
+        thCX[li] = tx; thCY[li] = ty; thVX[li] = 0; thVY[li] = 0;
+      } else if (dts > 0) {
+        thVX[li] += (TH_K * (tx - thCX[li]) - TH_D * thVX[li]) * dts;
+        thVY[li] += (TH_K * (ty - thCY[li]) - TH_D * thVY[li]) * dts;
+        thCX[li] += thVX[li] * dts;
+        thCY[li] += thVY[li] * dts;
+      }
+      dxl = thCX[li] - tx; dyl = thCY[li] - ty;
+      d = Math.sqrt(dxl * dxl + dyl * dyl);
+      if (d > TH_LAGMAX) {
+        thCX[li] = tx + dxl / d * TH_LAGMAX;
+        thCY[li] = ty + dyl / d * TH_LAGMAX;
+        d = TH_LAGMAX;
+      }
+      if (d > lag) lag = d;
+    }
+    thInit = true;
+    thLag = lag;
+    /* velocity-adaptive presence: the threads recede while the hand whips
+       around and breathe back within ~half a second once tracking settles */
+    var spd = Math.sqrt(cvx * cvx + cvy * cvy) / 700;
+    var pt2 = 1 / (1 + spd * spd);
+    thPresence += (pt2 - thPresence) * (dts > 0 ? Math.min(1, dts * 6) : 1);
+  }
+
   /* ---------- cursor soft lens: one sprite, lerped position ---------- */
   var lensX = -1e3, lensY = -1e3, lensA = 0;
   var finePtr = !!(window.matchMedia && window.matchMedia('(pointer:fine)').matches);
@@ -2099,6 +2213,19 @@
   function draw(now) {
     ctx.clearRect(0, 0, W, H);
     var i, k, v, sz, frac, seg, ax, ay, bx2, by2, lx, ly, va, rr, b, box, boy, bs, ba;
+    var tt, thA, q1x, q1y, r1x, r1y, m1x, m1y, q2x, q2y, r2x, r2y, m2x, m2y;
+    /* far haze band — atmospheric depth behind everything; barely-there in
+       the light theme, where distance reads as ink fading instead of fog */
+    if (C.hazeA > 0) {
+      for (i = 0; i < HZN; i++) {
+        lx = hzX[i] + hzOffX + Math.sin(now * 0.000037 + hzPh[i]) * 40;
+        ly = hzY[i] + hzOffY + Math.cos(now * 0.000031 + hzPh[i] * 1.7) * 28;
+        sz = hzSz[i];
+        ctx.globalAlpha = C.hazeA * (0.8 + 0.2 * Math.sin(now * 0.00013 + hzPh[i])) * (0.5 + 0.5 * gPA);
+        ctx.drawImage(spHaze, lx - sz / 2, ly - sz / 2, sz, sz);
+      }
+      ctx.globalAlpha = 1;
+    }
     /* cursor soft lens — the one halo that unifies the field affordance */
     if (lensA > 0.004) {
       sz = W < 720 ? 300 : 430;
@@ -2106,17 +2233,18 @@
       ctx.drawImage(spLens, lensX - sz / 2, lensY - sz / 2, sz, sz);
       ctx.globalAlpha = 1;
     }
-    /* particles — four parallax bands painted far to near; the farthest band
-       renders as a soft out-of-focus wash; the density window still fades
-       individuals in and out */
-    for (b = 3; b >= 0; b--) {
+    /* particles — six parallax bands painted far to near; the two farthest
+       bands render as a soft out-of-focus wash; the density window still
+       fades individuals in and out */
+    for (b = PBN - 1; b >= 0; b--) {
       box = pbOffX[b]; boy = pbOffY[b]; bs = pbS[b]; ba = pbA[b] * gPA;
-      if (b === 3) {
+      if (b >= 4) {
+        va = b === 5 ? 1.3 : 1;
         for (i = 0; i < pActive; i++) {
-          if ((i & 3) !== 3) continue;
-          va = pCountF - i; if (va <= 0) continue; if (va > 1) va = 1;
-          ctx.globalAlpha = va * ba * (isLight ? 0.8 : 0.9);
-          sz = Ptier[i] ? 7 : 5;
+          if (Pband[i] !== b) continue;
+          sz = pCountF - i; if (sz <= 0) continue; if (sz > 1) sz = 1;
+          ctx.globalAlpha = sz * ba * (isLight ? 0.8 : 0.9);
+          sz = (Ptier[i] ? 7 : 5) * va;
           ctx.drawImage(spFar, Px[i] + box - sz / 2, Py[i] + boy - sz / 2, sz, sz);
         }
         continue;
@@ -2124,28 +2252,28 @@
       if (isLight) {
         ctx.fillStyle = C.p0;
         for (i = 0; i < pActive; i++) {
-          if ((i & 3) !== b || Ptier[i]) continue;
+          if (Pband[i] !== b || Ptier[i]) continue;
           va = pCountF - i; if (va <= 0) continue; if (va > 1) va = 1;
           ctx.globalAlpha = va * ba;
           ctx.fillRect(Px[i] + box, Py[i] + boy, 1.6 * bs, 1.6 * bs);
         }
         ctx.fillStyle = C.p1;
         for (i = 0; i < pActive; i++) {
-          if ((i & 3) !== b || !Ptier[i]) continue;
+          if (Pband[i] !== b || !Ptier[i]) continue;
           va = pCountF - i; if (va <= 0) continue; if (va > 1) va = 1;
           ctx.globalAlpha = va * ba;
           ctx.fillRect(Px[i] + box - 0.5, Py[i] + boy - 0.5, 2.4 * bs, 2.4 * bs);
         }
       } else {
         for (i = 0; i < pActive; i++) {
-          if ((i & 3) !== b || Ptier[i]) continue;
+          if (Pband[i] !== b || Ptier[i]) continue;
           va = pCountF - i; if (va <= 0) continue; if (va > 1) va = 1;
           ctx.globalAlpha = 0.55 * va * ba;
           sz = 5 * bs;
           ctx.drawImage(spP0, Px[i] + box - sz / 2, Py[i] + boy - sz / 2, sz, sz);
         }
         for (i = 0; i < pActive; i++) {
-          if ((i & 3) !== b || !Ptier[i]) continue;
+          if (Pband[i] !== b || !Ptier[i]) continue;
           va = pCountF - i; if (va <= 0) continue; if (va > 1) va = 1;
           ctx.globalAlpha = 0.9 * va * ba;
           sz = 7 * bs;
@@ -2189,22 +2317,38 @@
       ctx.drawImage(spPulse, lx - sPu / 2, ly - sPu / 2, sPu, sPu);
     }
     ctx.globalAlpha = 1;
-    /* nodes — painter's order (far first); nearer = larger, brighter, crisper */
+    /* nodes — painter's order (far first); nearer = larger, brighter, more
+       saturated, with a wider soft halo; far nodes sink into the haze */
     rr = nodeR * gNodeR;
     var oi, sc, na;
     for (oi = 0; oi < NN; oi++) {
       k = zOrder[oi];
       v = nodeGlowVal(k);
-      sc = prS[k]; na = prA[k];
+      sc = prS[k]; na = prA[k]; tt = prT[k];
       if (!isLight && spNode) {
-        sz = rr * sc * (3.4 + v * 4.2);
-        ctx.globalAlpha = (0.12 + v * 0.55) * gNode * na;
-        ctx.drawImage(spNode, prX[k] - sz / 2, prY[k] - sz / 2, sz, sz);
+        if (sc > 1.22) { /* near focus: bigger, softer pre-rendered halo */
+          sz = rr * sc * (4.6 + v * 4.6);
+          ctx.globalAlpha = (0.10 + v * 0.5) * gNode * na;
+          ctx.drawImage(spNodeNear, prX[k] - sz / 2, prY[k] - sz / 2, sz, sz);
+        } else {
+          sz = rr * sc * (3.4 + v * 4.2);
+          ctx.globalAlpha = (0.12 + v * 0.55) * gNode * na;
+          ctx.drawImage(spNode, prX[k] - sz / 2, prY[k] - sz / 2, sz, sz);
+        }
+      }
+      if (isLight && spInk && sc > 1.22) { /* near focus: soft ink bleed */
+        sz = rr * sc * 4.6;
+        ctx.globalAlpha = 0.16 * gNode * na;
+        ctx.drawImage(spInk, prX[k] - sz / 2, prY[k] - sz / 2, sz, sz);
       }
       ctx.globalAlpha = gNode * na;
       ctx.beginPath();
       ctx.arc(prX[k], prY[k], rr * sc, 0, 6.2832);
-      ctx.fillStyle = 'rgba(' + C.nodeFill + ',' + (0.10 + v * 0.72).toFixed(3) + ')';
+      ctx.fillStyle = 'rgba(' +
+        ((C.nfFar[0] + (C.nf[0] - C.nfFar[0]) * tt) | 0) + ',' +
+        ((C.nfFar[1] + (C.nf[1] - C.nfFar[1]) * tt) | 0) + ',' +
+        ((C.nfFar[2] + (C.nf[2] - C.nfFar[2]) * tt) | 0) + ',' +
+        (0.10 + v * 0.72).toFixed(3) + ')';
       ctx.fill();
       ctx.lineWidth = sc;
       ctx.strokeStyle = C.nodeStroke;
@@ -2213,15 +2357,34 @@
     ctx.globalAlpha = 1;
     /* hero-chapter instruments: prediction links, trail, ghost, cursor, ripples */
     if (w0 > 0.02) {
-      /* output nodes wired to the ghost (the model's offset output placed at
-         the cursor); the links brighten as the real training loss falls */
+      /* listening threads: output nodes wired to the ghost through
+         spring-bent beziers (endpoints true — the projected output nodes and
+         the model's offset output placed at the cursor). They brighten as
+         the real training loss falls and recede while the hand whips around.
+         Three de Casteljau segments fade toward the ghost end so long spans
+         read soft in both themes — no gradients, no allocation. */
       var conv = (lossEma === lossEma) ? 1 / (1 + lossEma * 260) : 0;
-      ctx.strokeStyle = C.link; ctx.lineWidth = 1;
-      ctx.globalAlpha = w0 * (0.72 + 0.28 * conv);
-      ctx.beginPath();
-      ctx.moveTo(prX[L3O], prY[L3O]); ctx.lineTo(gx, gy);
-      ctx.moveTo(prX[L3O + 1], prY[L3O + 1]); ctx.lineTo(gx, gy);
-      ctx.stroke();
+      thA = w0 * (0.72 + 0.28 * conv) * (0.5 + 0.5 * thPresence);
+      ctx.strokeStyle = C.link;
+      ctx.lineWidth = 0.75 + 0.45 * thPresence;
+      for (i = 0; i < 2; i++) {
+        ax = prX[L3O + i]; ay = prY[L3O + i];
+        q1x = (ax + thCX[i]) * 0.5; q1y = (ay + thCY[i]) * 0.5;
+        r1x = (thCX[i] + gx) * 0.5; r1y = (thCY[i] + gy) * 0.5;
+        m1x = (q1x + r1x) * 0.5; m1y = (q1y + r1y) * 0.5;
+        q2x = (m1x + r1x) * 0.5; q2y = (m1y + r1y) * 0.5;
+        r2x = (r1x + gx) * 0.5; r2y = (r1y + gy) * 0.5;
+        m2x = (q2x + r2x) * 0.5; m2y = (q2y + r2y) * 0.5;
+        ctx.globalAlpha = thA;
+        ctx.beginPath(); ctx.moveTo(ax, ay);
+        ctx.quadraticCurveTo(q1x, q1y, m1x, m1y); ctx.stroke();
+        ctx.globalAlpha = thA * 0.66;
+        ctx.beginPath(); ctx.moveTo(m1x, m1y);
+        ctx.quadraticCurveTo(q2x, q2y, m2x, m2y); ctx.stroke();
+        ctx.globalAlpha = thA * 0.38;
+        ctx.beginPath(); ctx.moveTo(m2x, m2y);
+        ctx.quadraticCurveTo(r2x, r2y, gx, gy); ctx.stroke();
+      }
       /* ghost trail */
       ctx.fillStyle = 'rgba(' + C.trail + ',1)';
       for (i = 0; i < tCount; i++) {
@@ -2253,6 +2416,17 @@
         ctx.beginPath(); ctx.arc(Rrx[i], Rry[i], sz, 0, 6.2832); ctx.stroke();
         ctx.globalAlpha = 0.28 * (1 - frac) * w0;
         ctx.beginPath(); ctx.arc(Rrx[i], Rry[i], sz * 0.55, 0, 6.2832); ctx.stroke();
+      }
+    }
+    /* near out-of-focus bokeh — a breath of foreground drifting in front of
+       the whole scene (the hero copy sits above the canvas behind its scrim) */
+    if (C.bokehA > 0) {
+      for (i = 0; i < BKN; i++) {
+        lx = bkX[i] + bkOffX + Math.sin(now * 0.000053 + bkPh[i]) * 46;
+        ly = bkY[i] + bkOffY + Math.cos(now * 0.000047 + bkPh[i] * 1.9) * 34;
+        sz = bkSz[i];
+        ctx.globalAlpha = C.bokehA * (0.72 + 0.28 * Math.sin(now * 0.00017 + bkPh[i] * 2.3)) * (0.4 + 0.6 * gPA);
+        ctx.drawImage(spBokeh, lx - sz / 2, ly - sz / 2, sz, sz);
       }
     }
     ctx.globalAlpha = 1;
@@ -2289,7 +2463,9 @@
     boost: false, inject: 0, stir: 0, fps: 60,
     journey: 0, lens: 0,
     ghostX: 0, ghostY: 0, curX: 0, curY: 0, rawX: 0, rawY: 0,
-    cam: { kx: 0, ky: 0 }, depth: { sMin: 1, sMax: 1 },
+    cam: { kx: 0, ky: 0 },
+    depth: { sMin: 1, sMax: 1, foc: FOC, bands: PBN, bokeh: BKN, haze: HZN },
+    thread: { lag: 0, presence: 1, lagMax: TH_LAGMAX },
     reset: reset
   };
   window.__nn = NNAPI;
@@ -2371,7 +2547,7 @@
     }
     /* ambient particles drift toward their input node + the cursor,
        stirred by the cursor force field (swirl + pull + sweep wake).
-       Each particle lives in one of four parallax bands: far bands move
+       Each particle lives in one of six parallax bands: far bands move
        slower, feel the field less, and home toward their node's projected
        position minus their band's parallax offset — so on screen a particle
        arrives exactly on its node in every camera pose. */
@@ -2389,7 +2565,7 @@
     var homeF = 0.15 + 0.85 * w0; /* particles belong to the network in the hero */
     for (i = 0; i < pActive; i++) {
       node = i % NI;
-      pb = i & 3; pbs = pbS[pb];
+      pb = Pband[i]; pbs = pbS[pb];
       dx = prX[node] - pbOffX[pb] - Px[i]; dy = prY[node] - pbOffY[pb] - Py[i];
       d = Math.sqrt(dx * dx + dy * dy) + 0.001;
       sp2 = (9 + Ptier[i] * 9 + (i % 5) * 1.5) * dts * homeF * pbs;
@@ -2484,6 +2660,7 @@
       lensX += (lensTX - lensX) * Math.min(1, dt * 0.012);
       lensY += (lensTY - lensY) * Math.min(1, dt * 0.012);
     }
+    updateThreads(dts);
     draw(now);
     /* frame-budget governor: particles degrade before the network does */
     if (frames % 90 === 0) {
@@ -2505,6 +2682,7 @@
     NNAPI.rawX = tgx * W; NNAPI.rawY = tgy * H;
     NNAPI.cam.kx = camKX; NNAPI.cam.ky = camKY;
     NNAPI.depth.sMin = depthSMin; NNAPI.depth.sMax = depthSMax;
+    NNAPI.thread.lag = thLag; NNAPI.thread.presence = thPresence;
   }
 
   /* ---------- lifecycle: pause offscreen + tab hidden ---------- */
@@ -2546,12 +2724,15 @@
     camKX = 0.12; camKY = -0.09;
     projectNodes();
     updateBandOffsets();
+    thInit = false; updateThreads(0); /* threads rest settled on the plate */
     pActive = 0; bN = 0; tCount = 0; jN = 0;
     rOn[0] = 0; rOn[1] = 0; rOn[2] = 0;
     draw(0);
     NNAPI.particles = 0;
     NNAPI.ghostX = gx; NNAPI.ghostY = gy;
     NNAPI.curX = fx * W; NNAPI.curY = fy * H;
+    NNAPI.depth.sMin = depthSMin; NNAPI.depth.sMax = depthSMax;
+    NNAPI.thread.lag = thLag; NNAPI.thread.presence = thPresence;
   }
 
   /* ---------- reset (also wired to the command palette) ---------- */
@@ -2560,6 +2741,7 @@
     steps = 0; lossEma = NaN; thIdx = 0;
     trHead = -1; trCount = 0; pHead = -1; pCount = 0;
     tHead = -1; tCount = 0; jN = 0; boostUntil = -1e9;
+    thInit = false;
     warmUntil = performance.now() + 5000;
     rOn[0] = 0; rOn[1] = 0; rOn[2] = 0;
     inGlow.fill(0); outGlow.fill(0);
@@ -2590,7 +2772,11 @@
   warmUntil = performance.now() + 5000;
   pActive = pTarget;
   pCountF = pTarget;
-  for (var bi = 0; bi < PMAX; bi++) seedParticle(bi, bi % NI);
+  for (var bi = 0; bi < PMAX; bi++) {
+    seedParticle(bi, bi % NI);
+    /* latin-square band pick: every input node spreads across all six bands */
+    Pband[bi] = (bi % PBN + ((bi / PBN) | 0)) % PBN;
+  }
   if ('ResizeObserver' in window) {
     new ResizeObserver(function () {
       layout();
