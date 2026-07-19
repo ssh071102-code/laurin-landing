@@ -917,7 +917,7 @@
           </div>
           <p class="nn-cap">
             <span class="lt">Plate 00 — </span><span class="dk">live_demo / </span><b>the network that learns you.</b>
-            <span class="live">A real neural network — not a video. It is learning your cursor right now: forward passes and SGD weight updates, live in this browser, predicting 300&nbsp;ms ahead. Move to stir the field; click open canvas to inject data and briefly double the training rate.</span>
+            <span class="live">A real neural network — not a video. It is learning your cursor right now: forward passes and SGD weight updates, live in this browser, predicting 250&nbsp;ms ahead. Move to stir the field; click open canvas to inject data and briefly double the training rate.</span>
             <span class="rm">A real neural network backs this hero, shown as a single static forward pass — no animation or training. <span class="mc-ref-c">Enable motion above to see it live.</span><span class="mc-ref-p">Enable motion from the &#8984;K palette to see it live.</span></span>
           </p>
         </div>
@@ -1473,7 +1473,15 @@
    THE NETWORK THAT LEARNS YOU
    A real 6-10-8-2 MLP (tanh hidden, linear out) doing forward
    passes and online momentum-SGD in this tab, trained on the
-   visitor's cursor trajectory to predict 300 ms ahead.
+   visitor's cursor trajectory. It predicts the cursor's OFFSET
+   250 ms ahead (delta head, small-initialized), and the ghost
+   dot renders at cursor + predicted offset — so it starts glued
+   to the hand and learns genuine anticipation.
+   The scene is pseudo-3D: nodes and particles carry a z depth,
+   drawn through a focal-plane-locked pinhole projection with a
+   slowly drifting, pointer-leaning camera. The cursor, ghost,
+   and their green links live on the z = 0 focal plane, so the
+   prediction geometry stays pixel-true.
    Single rAF loop · all buffers preallocated · DPR capped at 2.
    ============================================================== */
 (function () {
@@ -1504,6 +1512,10 @@
   var dz1 = new Float32Array(NH1), dz2 = new Float32Array(NH2), dz3 = new Float32Array(NO);
   var LR = 0.05, MOM = 0.86, CLIP = 2.0;
   var steps = 0, lossEma = NaN;
+  /* delta head units: the target is (future − now) offset ×DSC, and the two
+     velocity features are ×VSC — pure unit scaling so everything is O(1).
+     The render divides by DSC again: the ghost is the raw model output. */
+  var DSC = 4, VSC = 8;
 
   function xavier(w, fin, fout) {
     var lim = Math.sqrt(6 / (fin + fout));
@@ -1511,6 +1523,9 @@
   }
   function initWeights() {
     xavier(W1, NI, NH1); xavier(W2, NH1, NH2); xavier(W3, NH2, NO);
+    /* small output head: the predicted offset starts near zero, so the ghost
+       hugs the cursor from second one and drifts ahead only as it learns */
+    for (var i = 0; i < W3.length; i++) W3[i] *= 0.2;
     b1.fill(0); b2.fill(0); b3.fill(0);
     vW1.fill(0); vW2.fill(0); vW3.fill(0); vb1.fill(0); vb2.fill(0); vb3.fill(0);
   }
@@ -1579,7 +1594,7 @@
   }
 
   /* ---------- rolling trajectory + training pairs ---------- */
-  var HORIZON = 300, SP = 90;
+  var HORIZON = 250, SP = 90;
   var PR = 240;
   var px = new Float32Array(PR), py = new Float32Array(PR), pt = new Float64Array(PR);
   var pHead = -1, pCount = 0;
@@ -1605,13 +1620,30 @@
   var trX = new Float32Array(TRN * NI), trY = new Float32Array(TRN * NO);
   var trHead = -1, trCount = 0;
   var tmp6 = new Float32Array(NI);
+  /* features at prediction time t: position + the two most recent segment
+     velocities; target: the offset the cursor actually travelled from t to
+     now (the horizon later). Same recipe feeds the display forward pass. */
   function buildPair(now, cx, cy) {
     if (!posAt(now - HORIZON - 2 * SP, tmp6, 0)) return;
     if (!posAt(now - HORIZON - SP, tmp6, 2)) return;
     if (!posAt(now - HORIZON, tmp6, 4)) return;
+    var v1x = (tmp6[4] - tmp6[2]) * VSC, v1y = (tmp6[5] - tmp6[3]) * VSC;
+    var v2x = (tmp6[2] - tmp6[0]) * VSC, v2y = (tmp6[3] - tmp6[1]) * VSC;
+    var tx2 = (cx - tmp6[4]) * DSC, ty2 = (cy - tmp6[5]) * DSC;
+    /* data hygiene: a pointer teleport (tab switch, page entry, throttled
+       frame) is not hand motion — one such pair would spike the momentum
+       optimizer for seconds. Skip non-physical outliers; never touch the
+       ghost itself. */
+    if (tx2 > 2.2 || tx2 < -2.2 || ty2 > 2.2 || ty2 < -2.2) return;
+    if (v1x > 3 || v1x < -3 || v1y > 3 || v1y < -3 ||
+        v2x > 3 || v2x < -3 || v2y > 3 || v2y < -3) return;
     trHead = (trHead + 1) % TRN;
-    trX.set(tmp6, trHead * NI);
-    trY[trHead * NO] = cx; trY[trHead * NO + 1] = cy;
+    var o = trHead * NI;
+    trX[o] = tmp6[4]; trX[o + 1] = tmp6[5];
+    trX[o + 2] = v1x; trX[o + 3] = v1y;
+    trX[o + 4] = v2x; trX[o + 5] = v2y;
+    trY[trHead * NO] = tx2;
+    trY[trHead * NO + 1] = ty2;
     if (trCount < TRN) trCount++;
   }
 
@@ -1629,33 +1661,64 @@
   var NN = 26, L1O = 6, L2O = 16, L3O = 24;
   var layerN = [6, 10, 8, 2], layerX = [0.10, 0.38, 0.65, 0.90];
   var nodeX = new Float32Array(NN), nodeY = new Float32Array(NN);
+  var nodeZ = new Float32Array(NN);
   var W = 1, H = 1, dpr = 1, nodeR = 4;
   var kX0 = new Float32Array(NN), kY0 = new Float32Array(NN);
   var kX1 = new Float32Array(NN), kY1 = new Float32Array(NN);
   var kX2 = new Float32Array(NN), kY2 = new Float32Array(NN);
   var kX3 = new Float32Array(NN), kY3 = new Float32Array(NN);
+  var kZ0 = new Float32Array(NN), kZ1 = new Float32Array(NN);
+  var kZ2 = new Float32Array(NN), kZ3 = new Float32Array(NN);
   var KAX = [kX0, kX1, kX2, kX3], KAY = [kY0, kY1, kY2, kY3];
+  var KAZ = [kZ0, kZ1, kZ2, kZ3];
   var SPD1 = [0.26, 0.30, 0.24, 0.10], ROW1 = [0.10, 0.36, 0.62, 0.88];
+  /* depth: per-layer z (input far, output near) + per-node jitter; the work
+     constellation scatters in z, the contact line flattens to the focal plane */
+  var LZ = [260, 100, -60, -220];
+  var FOC = 1150, zScale = 1;
+  var prX = new Float32Array(NN), prY = new Float32Array(NN);
+  var prS = new Float32Array(NN), prA = new Float32Array(NN);
+  var zOrder = new Uint8Array(NN);
+  var camKX = 0, camKY = 0, leanX = 0, leanY = 0;
   function fr01(x) { return x - Math.floor(x); }
   function buildKeyframes() {
     var top = jn ? 0.22 : 0.13, span = jn ? 0.64 : 0.70;
-    var k = 0, l, i, n, c;
+    zScale = W < 720 ? 0.6 : 1;
+    var k = 0, l, i, n, c, jz;
     for (l = 0; l < 4; l++) {
       n = layerN[l];
       for (i = 0; i < n; i++) {
         c = (i + 0.5) / n;
+        jz = (fr01(k * 0.618034 + 0.71) - 0.5) * 110;
         kX0[k] = layerX[l] * W;
         kY0[k] = (top + span * c) * H;
+        kZ0[k] = (LZ[l] + jz) * zScale;
         kX1[k] = (0.82 - SPD1[l] / 2 + SPD1[l] * c) * W;
         kY1[k] = ROW1[l] * H;
+        kZ1[k] = (LZ[l] + jz) * 0.5 * zScale;
         k++;
       }
     }
     for (k = 0; k < NN; k++) {
       kX2[k] = (0.06 + 0.88 * fr01(k * 0.618034 + 0.13)) * W;
       kY2[k] = (0.10 + 0.78 * fr01(k * 0.381966 + 0.37)) * H;
+      kZ2[k] = (fr01(k * 0.754878 + 0.29) - 0.5) * 560 * zScale;
       kX3[k] = (0.06 + 0.88 * (k / (NN - 1))) * W;
       kY3[k] = 0.84 * H;
+      kZ3[k] = 0;
+    }
+    /* counter-scale each keyframe by its own depth so the neutral-camera
+       projection lands exactly on the designed composition — depth then
+       shows through node size, brightness, and camera parallax, and near
+       nodes never magnify out of frame */
+    var cx = W * 0.5, cy = H * 0.5, inv;
+    for (k = 0; k < NN; k++) {
+      inv = (FOC + kZ0[k]) / FOC;
+      kX0[k] = cx + (kX0[k] - cx) * inv; kY0[k] = cy + (kY0[k] - cy) * inv;
+      inv = (FOC + kZ1[k]) / FOC;
+      kX1[k] = cx + (kX1[k] - cx) * inv; kY1[k] = cy + (kY1[k] - cy) * inv;
+      inv = (FOC + kZ2[k]) / FOC;
+      kX2[k] = cx + (kX2[k] - cx) * inv; kY2[k] = cy + (kY2[k] - cy) * inv;
     }
   }
   /* chapter scalar moods: hero · services · work · contact */
@@ -1693,9 +1756,11 @@
     jT = ti + f;
     w0 = 1 - jT; if (w0 < 0) w0 = 0;
     var xa = KAX[ti], xb = KAX[ti + 1], ya = KAY[ti], yb = KAY[ti + 1];
+    var za = KAZ[ti], zb = KAZ[ti + 1];
     for (var k = 0; k < NN; k++) {
       nodeX[k] = xa[k] + (xb[k] - xa[k]) * f;
       nodeY[k] = ya[k] + (yb[k] - ya[k]) * f;
+      nodeZ[k] = za[k] + (zb[k] - za[k]) * f;
     }
     gEdge = CH_EDGE[ti] + (CH_EDGE[ti + 1] - CH_EDGE[ti]) * f;
     gNode = CH_NODE[ti] + (CH_NODE[ti + 1] - CH_NODE[ti]) * f;
@@ -1719,9 +1784,58 @@
     nodeR = Math.max(3.2, Math.min(5.5, H * 0.009));
     FR = W < 720 ? 110 : 140; FR2 = FR * FR;
     buildKeyframes();
+    for (var b2 = 0; b2 < 4; b2++) pbS[b2] = FOC / (FOC + PBZ[b2] * zScale);
     measureAnchors();
     if (jn) applyJourney();
-    else for (var k = 0; k < NN; k++) { nodeX[k] = kX0[k]; nodeY[k] = kY0[k]; }
+    else for (var k = 0; k < NN; k++) { nodeX[k] = kX0[k]; nodeY[k] = kY0[k]; nodeZ[k] = kZ0[k]; }
+  }
+
+  /* ---------- living camera + focal-plane-locked pinhole projection ----------
+     Slow time drift (~33 s yaw, ~26 s pitch, ±6-7°) plus a lerped lean toward
+     the pointer (±5°). Small-angle shear-and-scale: a point at depth z shifts
+     by z·k and scales by FOC/(FOC+z), while z = 0 projects to itself — the
+     cursor, ghost, and their green links stay pixel-true on the focal plane. */
+  var sortAcc = 99;
+  function updateCamera(now, dts) {
+    var lx2 = (tgx - 0.5) * 0.17, ly2 = (tgy - 0.45) * 0.15;
+    var lk = dts > 0 ? 1 - Math.exp(-dts * 3) : 1;
+    leanX += (lx2 - leanX) * lk; leanY += (ly2 - leanY) * lk;
+    camKX = 0.115 * Math.sin(now * 0.00019) + leanX;
+    camKY = 0.085 * Math.sin(now * 0.000242 + 1.7) + leanY;
+  }
+  var depthSMin = 1, depthSMax = 1;
+  function projectNodes() {
+    var cx = W * 0.5, cy = H * 0.5, k, z, s, t, s0 = 9, s1 = -9;
+    for (k = 0; k < NN; k++) {
+      z = nodeZ[k];
+      s = FOC / (FOC + z);
+      prX[k] = cx + (nodeX[k] - cx + z * camKX) * s;
+      prY[k] = cy + (nodeY[k] - cy + z * camKY) * s;
+      prS[k] = s;
+      if (s < s0) s0 = s; if (s > s1) s1 = s;
+      t = (s - 0.76) * 2.1; if (t < 0) t = 0; else if (t > 1) t = 1;
+      prA[k] = C.dA0 + C.dA1 * t;
+    }
+    depthSMin = s0; depthSMax = s1;
+    if (++sortAcc >= 8) { /* painter's order: far nodes first, refreshed cheap */
+      sortAcc = 0;
+      var i, j, v;
+      for (i = 1; i < NN; i++) {
+        v = zOrder[i]; j = i - 1;
+        while (j >= 0 && nodeZ[zOrder[j]] < nodeZ[v]) { zOrder[j + 1] = zOrder[j]; j--; }
+        zOrder[j + 1] = v;
+      }
+    }
+  }
+  /* particle parallax bands (near → far): band = i & 3 */
+  var PBZ = [-70, 60, 180, 320];
+  var pbS = [1, 1, 1, 1], pbA = [1, 0.86, 0.68, 0.5];
+  var pbOffX = [0, 0, 0, 0], pbOffY = [0, 0, 0, 0];
+  function updateBandOffsets() {
+    for (var b = 0; b < 4; b++) {
+      pbOffX[b] = PBZ[b] * zScale * camKX * pbS[b];
+      pbOffY[b] = PBZ[b] * zScale * camKY * pbS[b];
+    }
   }
 
   /* ---------- input feed (pointer / synthetic) ----------
@@ -1788,7 +1902,7 @@
 
   /* ---------- theme palette + sprites ---------- */
   var isLight = true, C = null;
-  var spNode = null, spPulse = null, spGhost = null, spP0 = null, spP1 = null, spLens = null;
+  var spNode = null, spPulse = null, spGhost = null, spP0 = null, spP1 = null, spLens = null, spFar = null;
   function makeSprite(sz, inner, outer) {
     var c = document.createElement('canvas'); c.width = c.height = sz;
     var g = c.getContext('2d');
@@ -1811,11 +1925,13 @@
         nodeStroke: 'rgba(20,18,16,.68)', nodeFill: '125,79,28',
         ghost: '#1f5aa8', ghostHalo: 'rgba(31,90,168,.14)', trail: '31,90,168',
         cursor: '#141210', link: 'rgba(31,90,168,.30)', ring: '#7d4f1c',
-        p0: 'rgba(20,18,16,.34)', p1: 'rgba(125,79,28,.42)', pCap: 70
+        p0: 'rgba(20,18,16,.34)', p1: 'rgba(125,79,28,.42)', pCap: 70,
+        dA0: 0.45, dA1: 0.55 /* ink wash: near = dense ink, far = faint */
       };
       spPulse = makeSprite(24, 'rgba(125,79,28,.95)', 'rgba(125,79,28,0)');
       spGhost = makeSprite(36, 'rgba(31,90,168,.5)', 'rgba(31,90,168,0)');
       spLens = makeSprite(256, 'rgba(125,79,28,.32)', 'rgba(125,79,28,0)');
+      spFar = makeSprite(20, 'rgba(90,72,50,.5)', 'rgba(90,72,50,0)');
       spNode = null; spP0 = null; spP1 = null;
     } else {
       C = {
@@ -1823,7 +1939,8 @@
         nodeStroke: 'rgba(158,196,255,.55)', nodeFill: '158,196,255',
         ghost: '#3fd68f', ghostHalo: 'rgba(63,214,143,.16)', trail: '63,214,143',
         cursor: '#e8ecf3', link: 'rgba(63,214,143,.28)', ring: '#5ea0ff',
-        p0: null, p1: null, pCap: 170
+        p0: null, p1: null, pCap: 170,
+        dA0: 0.28, dA1: 0.72 /* instrument depth: glow falls off with distance */
       };
       spNode = makeSprite(64, 'rgba(94,160,255,.8)', 'rgba(94,160,255,0)');
       spPulse = makeSprite(24, 'rgba(186,214,255,.95)', 'rgba(94,160,255,0)');
@@ -1831,6 +1948,7 @@
       spLens = makeSprite(256, 'rgba(94,160,255,.36)', 'rgba(94,160,255,0)');
       spP0 = makeSprite(16, 'rgba(122,166,240,.55)', 'rgba(122,166,240,0)');
       spP1 = makeSprite(16, 'rgba(226,236,250,.8)', 'rgba(150,190,255,0)');
+      spFar = makeSprite(20, 'rgba(122,166,240,.4)', 'rgba(122,166,240,0)');
     }
     pTarget = Math.min(W < 720 ? 60 : 160, C.pCap);
     if (pActive > pTarget) pActive = pTarget;
@@ -1847,7 +1965,7 @@
     var tries = 0, nx2, ny2, dx, dy;
     do {
       nx2 = Math.random() * W; ny2 = Math.random() * H;
-      dx = nx2 - nodeX[avoidNode]; dy = ny2 - nodeY[avoidNode];
+      dx = nx2 - prX[avoidNode]; dy = ny2 - prY[avoidNode];
       tries++;
     } while (dx * dx + dy * dy < 22500 && tries < 8);
     Px[i] = nx2; Py[i] = ny2;
@@ -1871,7 +1989,7 @@
     }
   }
   function spawnConverge() {
-    var cx = (nodeX[L3O] + nodeX[L3O + 1]) / 2, cy = (nodeY[L3O] + nodeY[L3O + 1]) / 2;
+    var cx = (prX[L3O] + prX[L3O + 1]) / 2, cy = (prY[L3O] + prY[L3O + 1]) / 2;
     var i, a, s;
     for (i = 0; i < 18 && bN < BMAX; i++, bN++) {
       a = Math.random() * 6.283; s = 0.05 + Math.random() * 0.13;
@@ -1880,7 +1998,7 @@
       Blife[bN] = Bmax[bN] = 340 + Math.random() * 60;
     }
   }
-  var TH = [0.1, 0.05, 0.02], thIdx = 0;
+  var TH = [0.04, 0.015, 0.006], thIdx = 0;
 
   /* ---------- click = "data injection": pooled burst streaming into the
      input layer + a theme-skinned ripple ring + a real 1.5 s 2x SGD boost.
@@ -1912,7 +2030,7 @@
     }
     Rrx[s] = x; Rry[s] = y; Rrt[s] = 0; rOn[s] = 1;
   }
-  var boostUntil = -1e9;
+  var boostUntil = -1e9, warmUntil = 0;
 
   /* ---------- signal pulses along strongest weights ---------- */
   var PUMAX = 9;
@@ -1953,16 +2071,18 @@
 
   /* ---------- drawing ---------- */
   function drawEdgeLayer(Wm, rows, cols, aOff, bOff) {
-    var j, i, w, a, lw, x2, y2, cap = C.eCap * gEdge;
+    var j, i, w, a, lw, x2, y2, sB, aB, sm, am, cap = C.eCap * gEdge;
     for (j = 0; j < rows; j++) {
-      x2 = nodeX[bOff + j]; y2 = nodeY[bOff + j];
+      x2 = prX[bOff + j]; y2 = prY[bOff + j];
+      sB = prS[bOff + j]; aB = prA[bOff + j];
       for (i = 0; i < cols; i++) {
         w = Wm[j * cols + i]; if (w < 0) w = -w;
+        sm = (prS[aOff + i] + sB) * 0.5; am = (prA[aOff + i] + aB) * 0.5;
         a = (C.eA + w * C.eK) * gEdge; if (a > cap) a = cap;
         lw = C.wMin + w * C.wK; if (lw > C.wCap) lw = C.wCap;
-        ctx.globalAlpha = a; ctx.lineWidth = lw;
+        ctx.globalAlpha = a * am; ctx.lineWidth = lw * sm;
         ctx.beginPath();
-        ctx.moveTo(nodeX[aOff + i], nodeY[aOff + i]);
+        ctx.moveTo(prX[aOff + i], prY[aOff + i]);
         ctx.lineTo(x2, y2);
         ctx.stroke();
       }
@@ -1978,7 +2098,7 @@
   }
   function draw(now) {
     ctx.clearRect(0, 0, W, H);
-    var i, k, v, sz, frac, seg, ax, ay, bx2, by2, lx, ly, va, rr;
+    var i, k, v, sz, frac, seg, ax, ay, bx2, by2, lx, ly, va, rr, b, box, boy, bs, ba;
     /* cursor soft lens — the one halo that unifies the field affordance */
     if (lensA > 0.004) {
       sz = W < 720 ? 300 : 430;
@@ -1986,34 +2106,51 @@
       ctx.drawImage(spLens, lensX - sz / 2, lensY - sz / 2, sz, sz);
       ctx.globalAlpha = 1;
     }
-    /* particles — the density window fades individuals in and out */
-    if (isLight) {
-      ctx.fillStyle = C.p0;
-      for (i = 0; i < pActive; i++) {
-        if (Ptier[i]) continue;
-        va = pCountF - i; if (va <= 0) continue; if (va > 1) va = 1;
-        ctx.globalAlpha = va * gPA;
-        ctx.fillRect(Px[i], Py[i], 1.6, 1.6);
+    /* particles — four parallax bands painted far to near; the farthest band
+       renders as a soft out-of-focus wash; the density window still fades
+       individuals in and out */
+    for (b = 3; b >= 0; b--) {
+      box = pbOffX[b]; boy = pbOffY[b]; bs = pbS[b]; ba = pbA[b] * gPA;
+      if (b === 3) {
+        for (i = 0; i < pActive; i++) {
+          if ((i & 3) !== 3) continue;
+          va = pCountF - i; if (va <= 0) continue; if (va > 1) va = 1;
+          ctx.globalAlpha = va * ba * (isLight ? 0.8 : 0.9);
+          sz = Ptier[i] ? 7 : 5;
+          ctx.drawImage(spFar, Px[i] + box - sz / 2, Py[i] + boy - sz / 2, sz, sz);
+        }
+        continue;
       }
-      ctx.fillStyle = C.p1;
-      for (i = 0; i < pActive; i++) {
-        if (!Ptier[i]) continue;
-        va = pCountF - i; if (va <= 0) continue; if (va > 1) va = 1;
-        ctx.globalAlpha = va * gPA;
-        ctx.fillRect(Px[i] - 0.5, Py[i] - 0.5, 2.4, 2.4);
-      }
-    } else {
-      for (i = 0; i < pActive; i++) {
-        if (Ptier[i]) continue;
-        va = pCountF - i; if (va <= 0) continue; if (va > 1) va = 1;
-        ctx.globalAlpha = 0.55 * va * gPA;
-        ctx.drawImage(spP0, Px[i] - 2.5, Py[i] - 2.5, 5, 5);
-      }
-      for (i = 0; i < pActive; i++) {
-        if (!Ptier[i]) continue;
-        va = pCountF - i; if (va <= 0) continue; if (va > 1) va = 1;
-        ctx.globalAlpha = 0.9 * va * gPA;
-        ctx.drawImage(spP1, Px[i] - 3.5, Py[i] - 3.5, 7, 7);
+      if (isLight) {
+        ctx.fillStyle = C.p0;
+        for (i = 0; i < pActive; i++) {
+          if ((i & 3) !== b || Ptier[i]) continue;
+          va = pCountF - i; if (va <= 0) continue; if (va > 1) va = 1;
+          ctx.globalAlpha = va * ba;
+          ctx.fillRect(Px[i] + box, Py[i] + boy, 1.6 * bs, 1.6 * bs);
+        }
+        ctx.fillStyle = C.p1;
+        for (i = 0; i < pActive; i++) {
+          if ((i & 3) !== b || !Ptier[i]) continue;
+          va = pCountF - i; if (va <= 0) continue; if (va > 1) va = 1;
+          ctx.globalAlpha = va * ba;
+          ctx.fillRect(Px[i] + box - 0.5, Py[i] + boy - 0.5, 2.4 * bs, 2.4 * bs);
+        }
+      } else {
+        for (i = 0; i < pActive; i++) {
+          if ((i & 3) !== b || Ptier[i]) continue;
+          va = pCountF - i; if (va <= 0) continue; if (va > 1) va = 1;
+          ctx.globalAlpha = 0.55 * va * ba;
+          sz = 5 * bs;
+          ctx.drawImage(spP0, Px[i] + box - sz / 2, Py[i] + boy - sz / 2, sz, sz);
+        }
+        for (i = 0; i < pActive; i++) {
+          if ((i & 3) !== b || !Ptier[i]) continue;
+          va = pCountF - i; if (va <= 0) continue; if (va > 1) va = 1;
+          ctx.globalAlpha = 0.9 * va * ba;
+          sz = 7 * bs;
+          ctx.drawImage(spP1, Px[i] + box - sz / 2, Py[i] + boy - sz / 2, sz, sz);
+        }
       }
     }
     ctx.globalAlpha = 1;
@@ -2037,45 +2174,53 @@
     drawEdgeLayer(W2, NH2, NH1, L1O, L2O);
     drawEdgeLayer(W3, NO, NH2, L2O, L3O);
     ctx.globalAlpha = 1;
-    /* pulses */
+    /* pulses — position, size, and glow interpolate between endpoint depths */
     va = 0.95 * Math.min(1, gNode + 0.4);
+    var sPu, aPu;
     for (i = 0; i < PUMAX; i++) {
       if (!puOn[i]) continue;
       seg = puT[i] | 0; if (seg > 2) seg = 2;
       frac = puT[i] - seg;
-      k = puA[i * 4 + seg]; ax = nodeX[k]; ay = nodeY[k];
-      k = puA[i * 4 + seg + 1]; bx2 = nodeX[k]; by2 = nodeY[k];
+      k = puA[i * 4 + seg]; ax = prX[k]; ay = prY[k]; sPu = prS[k]; aPu = prA[k];
+      k = puA[i * 4 + seg + 1]; bx2 = prX[k]; by2 = prY[k];
       lx = ax + (bx2 - ax) * frac; ly = ay + (by2 - ay) * frac;
-      ctx.globalAlpha = va;
-      ctx.drawImage(spPulse, lx - 5, ly - 5, 10, 10);
+      sPu = (sPu + (prS[k] - sPu) * frac) * 10;
+      ctx.globalAlpha = va * (aPu + (prA[k] - aPu) * frac);
+      ctx.drawImage(spPulse, lx - sPu / 2, ly - sPu / 2, sPu, sPu);
     }
     ctx.globalAlpha = 1;
-    /* nodes */
+    /* nodes — painter's order (far first); nearer = larger, brighter, crisper */
     rr = nodeR * gNodeR;
-    for (k = 0; k < NN; k++) {
+    var oi, sc, na;
+    for (oi = 0; oi < NN; oi++) {
+      k = zOrder[oi];
       v = nodeGlowVal(k);
+      sc = prS[k]; na = prA[k];
       if (!isLight && spNode) {
-        sz = rr * (3.4 + v * 4.2);
-        ctx.globalAlpha = (0.12 + v * 0.55) * gNode;
-        ctx.drawImage(spNode, nodeX[k] - sz / 2, nodeY[k] - sz / 2, sz, sz);
+        sz = rr * sc * (3.4 + v * 4.2);
+        ctx.globalAlpha = (0.12 + v * 0.55) * gNode * na;
+        ctx.drawImage(spNode, prX[k] - sz / 2, prY[k] - sz / 2, sz, sz);
       }
-      ctx.globalAlpha = gNode;
+      ctx.globalAlpha = gNode * na;
       ctx.beginPath();
-      ctx.arc(nodeX[k], nodeY[k], rr, 0, 6.2832);
+      ctx.arc(prX[k], prY[k], rr * sc, 0, 6.2832);
       ctx.fillStyle = 'rgba(' + C.nodeFill + ',' + (0.10 + v * 0.72).toFixed(3) + ')';
       ctx.fill();
-      ctx.lineWidth = 1;
+      ctx.lineWidth = sc;
       ctx.strokeStyle = C.nodeStroke;
       ctx.stroke();
     }
     ctx.globalAlpha = 1;
     /* hero-chapter instruments: prediction links, trail, ghost, cursor, ripples */
     if (w0 > 0.02) {
-      /* output nodes wired to the ghost: the two outputs ARE its coordinates */
-      ctx.strokeStyle = C.link; ctx.lineWidth = 1; ctx.globalAlpha = w0;
+      /* output nodes wired to the ghost (the model's offset output placed at
+         the cursor); the links brighten as the real training loss falls */
+      var conv = (lossEma === lossEma) ? 1 / (1 + lossEma * 260) : 0;
+      ctx.strokeStyle = C.link; ctx.lineWidth = 1;
+      ctx.globalAlpha = w0 * (0.72 + 0.28 * conv);
       ctx.beginPath();
-      ctx.moveTo(nodeX[L3O], nodeY[L3O]); ctx.lineTo(gx, gy);
-      ctx.moveTo(nodeX[L3O + 1], nodeY[L3O + 1]); ctx.lineTo(gx, gy);
+      ctx.moveTo(prX[L3O], prY[L3O]); ctx.lineTo(gx, gy);
+      ctx.moveTo(prX[L3O + 1], prY[L3O + 1]); ctx.lineTo(gx, gy);
       ctx.stroke();
       /* ghost trail */
       ctx.fillStyle = 'rgba(' + C.trail + ',1)';
@@ -2118,7 +2263,11 @@
   var elS1 = document.getElementById('nnSteps'), elS2 = document.getElementById('nnStepsChip');
   var lastLs = '', lastSs = '';
   function updateDom() {
-    var ls = (lossEma === lossEma) ? lossEma.toFixed(4) : '—';
+    /* 4-decimal readout; once the true loss converges below 1e-4 it switches
+       to exponential so a well-trained net never reads as a dead 0.0000 */
+    var ls = (lossEma === lossEma)
+      ? (lossEma >= 0.0001 ? lossEma.toFixed(4) : lossEma.toExponential(1))
+      : '—';
     var ss = steps > 0 ? String(steps) : '—';
     if (ls !== lastLs) {
       lastLs = ls;
@@ -2139,6 +2288,8 @@
     running: false, particles: 0, pred: { x: 0, y: 0 },
     boost: false, inject: 0, stir: 0, fps: 60,
     journey: 0, lens: 0,
+    ghostX: 0, ghostY: 0, curX: 0, curY: 0, rawX: 0, rawY: 0,
+    cam: { kx: 0, ky: 0 }, depth: { sMin: 1, sMax: 1 },
     reset: reset
   };
   window.__nn = NNAPI;
@@ -2146,6 +2297,7 @@
     raf = requestAnimationFrame(loop);
     var dt = last ? ts - last : 16.7; last = ts;
     if (dt > 64) dt = 64;
+    var dts = dt / 1000;
     frames++;
     fpsEma += (1000 / (dt < 1 ? 1 : dt) - fpsEma) * 0.05;
     var now = ts, i;
@@ -2161,7 +2313,12 @@
       tgx = 0.5 + 0.37 * Math.sin(now * 0.00071 + 0.8);
       tgy = 0.44 + 0.30 * Math.sin(now * 0.000453);
     }
-    fx += (tgx - fx) * 0.3; fy += (tgy - fy) * 0.3;
+    /* living camera, then one projection pass shared by every draw layer */
+    updateCamera(now, dts);
+    projectNodes();
+    updateBandOffsets();
+    var fk = 1 - Math.exp(-dts * 28);
+    fx += (tgx - fx) * fk; fy += (tgy - fy) * fk;
     var nxx = fx * 2 - 1, nyy = fy * 2 - 1;
     pushPos(nxx, nyy, now);
     buildPair(now, nxx, nyy);
@@ -2169,27 +2326,38 @@
        rate is the same at 60 Hz, 144 Hz, or an unthrottled headless rAF.
        For 1.5 s after a data-injection click the budget genuinely doubles. */
     /* Past the hero the trainer idles to a low tick on the synthetic feed;
-       steps stay truthful — the counter only counts real trainOn calls. */
+       steps stay truthful — the counter only counts real trainOn calls.
+       The first ~5 s after load/reset train at 2x so anticipation shows fast. */
     var boost = now < boostUntil;
+    var mult = (boost ? 2 : 1) * (now < warmUntil ? 2 : 1);
     if (trCount > 8) {
-      trainAcc += dt * 0.06 * trainSteps * (boost ? 2 : 1) * gTrain;
+      trainAcc += dt * 0.06 * trainSteps * mult * gTrain;
       var nSteps = trainAcc | 0;
-      var nCap = boost ? 16 : 8;
+      var nCap = 8 * mult; if (nCap > 24) nCap = 24;
       if (nSteps > nCap) nSteps = nCap;
       trainAcc -= nSteps;
       for (i = 0; i < nSteps; i++) trainOn((Math.random() * trCount) | 0);
       while (thIdx < TH.length && steps > 120 && lossEma < TH[thIdx]) { spawnConverge(); thIdx++; }
     }
-    /* display forward pass on the live trajectory */
-    if (!posAt(now - 2 * SP, a0, 0)) { a0[0] = nxx; a0[1] = nyy; }
-    if (!posAt(now - SP, a0, 2)) { a0[2] = nxx; a0[3] = nyy; }
-    a0[4] = nxx; a0[5] = nyy;
+    /* display forward pass on the live trajectory: position + two velocities */
+    if (!posAt(now - 2 * SP, tmp6, 0)) { tmp6[0] = nxx; tmp6[1] = nyy; }
+    if (!posAt(now - SP, tmp6, 2)) { tmp6[2] = nxx; tmp6[3] = nyy; }
+    a0[0] = nxx; a0[1] = nyy;
+    a0[2] = (nxx - tmp6[2]) * VSC; a0[3] = (nyy - tmp6[3]) * VSC;
+    a0[4] = (tmp6[2] - tmp6[0]) * VSC; a0[5] = (tmp6[3] - tmp6[1]) * VSC;
     forward();
-    var pxx = a3[0] < -1.25 ? -1.25 : (a3[0] > 1.25 ? 1.25 : a3[0]);
-    var pyy = a3[1] < -1.25 ? -1.25 : (a3[1] > 1.25 ? 1.25 : a3[1]);
+    /* ghost = cursor + the model's predicted offset (no clamp to the cursor —
+       only a generous sanity cap), then a small render lerp against jitter */
+    var pdx = a3[0] / DSC, pdy = a3[1] / DSC;
+    if (pdx > 0.55) pdx = 0.55; else if (pdx < -0.55) pdx = -0.55;
+    if (pdy > 0.55) pdy = 0.55; else if (pdy < -0.55) pdy = -0.55;
+    var pxx = nxx + pdx, pyy = nyy + pdy;
+    if (pxx < -1.2) pxx = -1.2; else if (pxx > 1.2) pxx = 1.2;
+    if (pyy < -1.2) pyy = -1.2; else if (pyy > 1.2) pyy = 1.2;
     pxx = (pxx + 1) / 2 * W; pyy = (pyy + 1) / 2 * H;
     if (gx === 0 && gy === 0) { gx = pxx; gy = pyy; }
-    gx += (pxx - gx) * 0.3; gy += (pyy - gy) * 0.3;
+    var gk = 1 - Math.exp(-dts * 12);
+    gx += (pxx - gx) * gk; gy += (pyy - gy) * gk;
     tHead = (tHead + 1) % TRL; Tx[tHead] = gx; Ty[tHead] = gy;
     if (tCount < TRL) tCount++;
     /* pulses — pacing slows chapter by chapter, down to one slow pulse
@@ -2202,28 +2370,38 @@
       if (puT[i] >= 3) { outGlow[puA[i * 4 + 3] - L3O] = 1; puOn[i] = 0; }
     }
     /* ambient particles drift toward their input node + the cursor,
-       stirred by the cursor force field (swirl + pull + sweep wake) */
-    var dts = dt / 1000, node, dx, dy, d, sp2, cx2 = fx * W, cy2 = fy * H;
-    var ddx, ddy, d2f, tf, ux, uy, wf, v2f, sf, stir = 0;
+       stirred by the cursor force field (swirl + pull + sweep wake).
+       Each particle lives in one of four parallax bands: far bands move
+       slower, feel the field less, and home toward their node's projected
+       position minus their band's parallax offset — so on screen a particle
+       arrives exactly on its node in every camera pose. */
+    var node, dx, dy, d, sp2, cx2 = fx * W, cy2 = fy * H;
+    var rx2 = tgx * W, ry2 = tgy * H;
+    var ddx, ddy, d2f, tf, ux, uy, wf, v2f, sf, stir = 0, pb, pbs;
+    /* the wake reads the hand's raw velocity — independent of the display
+       smoothing on fx/fy, so sweeps land with full energy at any frame rate */
     if (cvOk && dts > 0.0005) {
-      cvx += ((cx2 - pcx) / dts - cvx) * 0.35;
-      cvy += ((cy2 - pcy) / dts - cvy) * 0.35;
+      cvx += ((rx2 - pcx) / dts - cvx) * 0.35;
+      cvy += ((ry2 - pcy) / dts - cvy) * 0.35;
     }
-    pcx = cx2; pcy = cy2; cvOk = true;
+    pcx = rx2; pcy = ry2; cvOk = true;
     var vd = 1 - Math.min(0.9, VDAMP * dts);
     var homeF = 0.15 + 0.85 * w0; /* particles belong to the network in the hero */
     for (i = 0; i < pActive; i++) {
       node = i % NI;
-      dx = nodeX[node] - Px[i]; dy = nodeY[node] - Py[i];
+      pb = i & 3; pbs = pbS[pb];
+      dx = prX[node] - pbOffX[pb] - Px[i]; dy = prY[node] - pbOffY[pb] - Py[i];
       d = Math.sqrt(dx * dx + dy * dy) + 0.001;
-      sp2 = (9 + Ptier[i] * 9 + (i % 5) * 1.5) * dts * homeF;
-      Px[i] += dx / d * sp2 + Math.sin(now * 0.0005 + Pph[i]) * 0.3;
-      Py[i] += dy / d * sp2 + Math.cos(now * 0.00045 + Pph[i] * 1.7) * 0.3;
-      Px[i] += (cx2 - Px[i]) * 0.0005 * dt * 0.06 * gField;
-      Py[i] += (cy2 - Py[i]) * 0.0005 * dt * 0.06 * gField;
-      ddx = Px[i] - cx2; ddy = Py[i] - cy2;
+      sp2 = (9 + Ptier[i] * 9 + (i % 5) * 1.5) * dts * homeF * pbs;
+      Px[i] += dx / d * sp2 + Math.sin(now * 0.0005 + Pph[i]) * 0.3 * pbs;
+      Py[i] += dy / d * sp2 + Math.cos(now * 0.00045 + Pph[i] * 1.7) * 0.3 * pbs;
+      Px[i] += (cx2 - pbOffX[pb] - Px[i]) * 0.0005 * dt * 0.06 * gField * pbs;
+      Py[i] += (cy2 - pbOffY[pb] - Py[i]) * 0.0005 * dt * 0.06 * gField * pbs;
+      ddx = Px[i] - (cx2 - pbOffX[pb]); ddy = Py[i] - (cy2 - pbOffY[pb]);
       d2f = ddx * ddx + ddy * ddy;
       if (d2f < FR2 && d2f > 0.01) {
+        /* full force strength on every band — depth slows only the position
+           integration, which is what parallax actually looks like */
         d2f = Math.sqrt(d2f); tf = (1 - d2f / FR) * gField;
         ux = ddx / d2f; uy = ddy / d2f;
         Pvx[i] += (-uy * SWIRL - ux * PULL) * tf * dts;
@@ -2244,7 +2422,7 @@
         sf = VMAX / Math.sqrt(v2f);
         Pvx[i] *= sf; Pvy[i] *= sf; v2f = VMAX2;
       }
-      Px[i] += Pvx[i] * dts; Py[i] += Pvy[i] * dts;
+      Px[i] += Pvx[i] * dts * pbs; Py[i] += Pvy[i] * dts * pbs;
       if (Py[i] > H + 14) Py[i] -= H + 28;
       else if (Py[i] < -14) Py[i] += H + 28;
       stir += v2f;
@@ -2267,11 +2445,12 @@
       }
       Bx[i] += Bvx[i] * dt; By[i] += Bvy[i] * dt;
     }
-    /* injected data: radial burst that curves home to the input layer */
+    /* injected data: radial burst that curves home to the input layer
+       (targets the projected node position — the one actually drawn) */
     for (i = 0; i < jN; i++) {
       Jlife[i] -= dt;
       node = Jn[i];
-      dx = nodeX[node] - Jx[i]; dy = nodeY[node] - Jy[i];
+      dx = prX[node] - Jx[i]; dy = prY[node] - Jy[i];
       d = Math.sqrt(dx * dx + dy * dy) + 0.001;
       if (d < 10 || Jlife[i] <= 0) {
         inGlow[node] = 1;
@@ -2321,6 +2500,11 @@
     NNAPI.particles = pActive; NNAPI.pred.x = gx; NNAPI.pred.y = gy;
     NNAPI.boost = boost; NNAPI.inject = jN; NNAPI.fps = fpsEma;
     NNAPI.journey = jT; NNAPI.lens = lensA;
+    NNAPI.ghostX = gx; NNAPI.ghostY = gy;
+    NNAPI.curX = fx * W; NNAPI.curY = fy * H;
+    NNAPI.rawX = tgx * W; NNAPI.rawY = tgy * H;
+    NNAPI.cam.kx = camKX; NNAPI.cam.ky = camKY;
+    NNAPI.depth.sMin = depthSMin; NNAPI.depth.sMax = depthSMax;
   }
 
   /* ---------- lifecycle: pause offscreen + tab hidden ---------- */
@@ -2348,18 +2532,26 @@
     docHidden ? stop() : start();
   });
 
-  /* ---------- reduced motion: one static forward pass, no loop ---------- */
+  /* ---------- reduced motion: one static forward pass, no loop.
+     The depth projection still applies with a fixed, intentional camera
+     pose — static but volumetric. Ghost = pose + predicted offset. ---------- */
   function drawStatic() {
-    a0[0] = -0.52; a0[1] = 0.14; a0[2] = -0.2; a0[3] = -0.02; a0[4] = 0.08; a0[5] = -0.16;
+    a0[0] = 0.08; a0[1] = -0.16; a0[2] = 0.34; a0[3] = 0.12; a0[4] = 0.28; a0[5] = 0.18;
     forward();
-    fx = (a0[4] + 1) / 2; fy = (a0[5] + 1) / 2;
-    var pxx = a3[0] < -1 ? -1 : (a3[0] > 1 ? 1 : a3[0]);
-    var pyy = a3[1] < -1 ? -1 : (a3[1] > 1 ? 1 : a3[1]);
-    gx = (pxx + 1) / 2 * W; gy = (pyy + 1) / 2 * H;
+    fx = (a0[0] + 1) / 2; fy = (a0[1] + 1) / 2;
+    var pdx = a3[0] / DSC, pdy = a3[1] / DSC;
+    if (pdx > 0.55) pdx = 0.55; else if (pdx < -0.55) pdx = -0.55;
+    if (pdy > 0.55) pdy = 0.55; else if (pdy < -0.55) pdy = -0.55;
+    gx = (a0[0] + pdx + 1) / 2 * W; gy = (a0[1] + pdy + 1) / 2 * H;
+    camKX = 0.12; camKY = -0.09;
+    projectNodes();
+    updateBandOffsets();
     pActive = 0; bN = 0; tCount = 0; jN = 0;
     rOn[0] = 0; rOn[1] = 0; rOn[2] = 0;
     draw(0);
     NNAPI.particles = 0;
+    NNAPI.ghostX = gx; NNAPI.ghostY = gy;
+    NNAPI.curX = fx * W; NNAPI.curY = fy * H;
   }
 
   /* ---------- reset (also wired to the command palette) ---------- */
@@ -2368,6 +2560,7 @@
     steps = 0; lossEma = NaN; thIdx = 0;
     trHead = -1; trCount = 0; pHead = -1; pCount = 0;
     tHead = -1; tCount = 0; jN = 0; boostUntil = -1e9;
+    warmUntil = performance.now() + 5000;
     rOn[0] = 0; rOn[1] = 0; rOn[2] = 0;
     inGlow.fill(0); outGlow.fill(0);
     for (var i = 0; i < PUMAX; i++) puOn[i] = 0;
@@ -2389,7 +2582,12 @@
   /* ---------- boot ---------- */
   layout();
   applyTheme();
+  for (var zi = 0; zi < NN; zi++) zOrder[zi] = zi;
+  updateCamera(0, 0);
+  projectNodes();
+  updateBandOffsets();
   initWeights();
+  warmUntil = performance.now() + 5000;
   pActive = pTarget;
   pCountF = pTarget;
   for (var bi = 0; bi < PMAX; bi++) seedParticle(bi, bi % NI);
