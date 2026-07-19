@@ -13,6 +13,16 @@
     t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
   }
   d.setAttribute('data-theme', t);
+  /* motion decision, resolved before first paint: the OS reduced-motion
+     preference, overridable either way by the visitor (motion=on / motion=off).
+     Exactly one of force-motion / rm-static is set; rm-offer additionally
+     marks "OS asks for reduced motion and motion is off" — the opt-in chip. */
+  var m = null;
+  try { m = localStorage.getItem('motion'); } catch (e) {}
+  var osReduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var motion = m === 'on' || (m !== 'off' && !osReduce);
+  d.classList.add(motion ? 'force-motion' : 'rm-static');
+  if (osReduce && !motion) d.classList.add('rm-offer');
 })();
 </script>
 <title>Laurin Lin — AI Integration &amp; Automation Engineer</title>
@@ -233,7 +243,11 @@
      BASE
      ============================================================ */
   *{box-sizing:border-box}
-  @media (prefers-reduced-motion: no-preference){ html{scroll-behavior:smooth} }
+  /* motion gate: the pre-paint script resolves the OS preference + stored
+     override into html.force-motion / html.rm-static; the media query only
+     covers no-JS visitors, for whom no override can exist */
+  html.force-motion{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: no-preference){ html:not(.rm-static){scroll-behavior:smooth} }
   body{
     margin:0; background:var(--bg); color:var(--text);
     font-family:var(--font-body);
@@ -430,10 +444,43 @@
   @keyframes cuedrop{to{top:115%}}
   @media(hover:hover){ .cue:hover{color:var(--text)} }
   html:not(.js) .hud, html:not(.js) .nn-cap, html:not(.js) .nnrow{display:none}
-  @media (prefers-reduced-motion: reduce){
-    .nn-cap .live{display:none}
-    .nn-cap .rm{display:inline}
+  html.rm-static .nn-cap .live{display:none}
+  html.rm-static .nn-cap .rm{display:inline}
+  /* the static caption points at whichever motion switch is actually visible */
+  .nn-cap .mc-ref-p{display:none}
+  html.rm-static:not(.rm-offer) .nn-cap .mc-ref-c{display:none}
+  html.rm-static:not(.rm-offer) .nn-cap .mc-ref-p{display:inline}
+
+  /* MOTION OPT-IN — offered only while the OS asks for reduced motion and
+     motion is off (html.rm-offer): one chip by the caption, one in the header */
+  .capcol{display:flex; flex-direction:column; align-items:flex-start; gap:14px}
+  .motion-chip{display:none; flex-direction:column; align-items:flex-start; gap:8px; pointer-events:auto}
+  html.rm-offer .motion-chip{display:flex}
+  .mc-btn{
+    display:inline-flex; align-items:center; gap:8px; cursor:pointer;
+    font-family:var(--font-mono); font-size:11px; font-weight:500;
+    letter-spacing:.16em; text-transform:uppercase;
+    color:var(--accent); background:var(--hud-bg);
+    border:1px solid var(--accent); border-radius:var(--btn-radius);
+    padding:8px 14px;
   }
+  .mc-note{
+    font-family:var(--font-mono); font-size:11px; line-height:1.7; letter-spacing:.04em;
+    color:var(--plate-cap); max-width:400px;
+  }
+  .mc-head{
+    display:none; align-items:center; gap:7px; cursor:pointer;
+    font-family:var(--font-mono); font-size:10px; font-weight:500;
+    letter-spacing:.14em; text-transform:uppercase;
+    color:var(--accent); background:transparent;
+    border:1px solid var(--accent); border-radius:var(--btn-radius); padding:6px 10px;
+  }
+  html.rm-offer .mc-head{display:inline-flex}
+  @media(hover:hover){
+    .mc-btn:hover,.mc-head:hover{background:var(--btn-bg); color:var(--btn-fg); border-color:var(--btn-bg)}
+  }
+  /* the offered chip makes the absolute hero-foot taller: reserve room for it */
+  @media(min-width:961px){ html.rm-offer .hero{padding-bottom:265px} }
   @media(max-width:960px){
     .hero{padding:48px 0 40px; min-height:max(600px, calc(100svh - 100px))}
     .hero-foot{position:static; pointer-events:auto; margin-top:30px}
@@ -779,24 +826,37 @@
   @keyframes settle{from{filter:sepia(.28) brightness(1.04)}}
 
   /* ============================================================
-     REDUCED MOTION — everything visible, nothing animates
+     STATIC MODE — everything visible, nothing animates.
+     Keyed on html.rm-static (pre-paint script: OS preference +
+     stored override), so opting in to motion neutralizes all of
+     it and opting out works even on a no-preference OS. The media
+     query at the end only covers no-JS visitors, whose motion is
+     the pure-CSS layer and who can hold no override.
      ============================================================ */
+  html.rm-static .fx{animation:none}
+  html.rm-static .sig::after{animation:none; transform:scaleX(1); opacity:1}
+  html.rm-static .reveal{opacity:1; transform:none; transition:none}
+  html.rm-static .btn,html.rm-static .repo,html.rm-static .navlinks a::after,
+  html.rm-static .repo .go i,html.rm-static button[type=submit],html.rm-static .t-opt{transition:none}
+  html.rm-static .tk-in{animation:none}
+  html.rm-static .pal-box{animation:none}
+  html.rm-static .cue-line::after{animation:none; top:30%}
+  html.rm-static.pal-open .khint{animation:none}
+  html.rm-static.pw .gridbg,html.rm-static.pw .glow,html.rm-static.pw .topstrip,
+  html.rm-static.pw .ro-row,html.rm-static.pw .toggle,html.rm-static.pw .hud,
+  html.rm-static.iw #wash,html.rm-static.iw main .wrap{animation:none}
+  html.rm-static .reveal .sec-rule,html.rm-static .reveal .sec-title,html.rm-static .ledger.reveal > li,
+  html.rm-static .repo.reveal,html.rm-static .repo.reveal::before,html.rm-static .repo.reveal > *,
+  html.rm-static .plate.reveal img,html.rm-static .plate.reveal figcaption,
+  html.rm-static .reveal .readout,html.rm-static .reveal .facts{opacity:1; transform:none; clip-path:none; transition:none}
+  html.rm-static .bt-split .w{opacity:1; transform:none; animation:none}
   @media (prefers-reduced-motion: reduce){
-    .fx{animation:none}
-    .sig::after{animation:none; transform:scaleX(1); opacity:1}
-    .js .reveal{opacity:1; transform:none; transition:none}
-    .btn,.repo,.navlinks a::after,.repo .go i,button[type=submit],.t-opt{transition:none}
-    .tk-in{animation:none}
-    .pal-box{animation:none}
-    .cue-line::after{animation:none; top:30%}
-    .pal-open .khint{animation:none}
-    .pw .gridbg,.pw .glow,.pw .topstrip,.pw .ro-row,.pw .toggle,.pw .hud,
-    .iw #wash,.iw main .wrap{animation:none}
-    .js .reveal .sec-rule,.js .reveal .sec-title,.js .ledger.reveal > li,
-    .js .repo.reveal,.js .repo.reveal::before,.js .repo.reveal > *,
-    .js .plate.reveal img,.js .plate.reveal figcaption,
-    .js .reveal .readout,.js .reveal .facts{opacity:1; transform:none; clip-path:none; transition:none}
-    .js .bt-split .w{opacity:1; transform:none; animation:none}
+    html:not(.js) .fx{animation:none}
+    html:not(.js) .sig::after{animation:none; transform:scaleX(1); opacity:1}
+    html:not(.js) .btn,html:not(.js) .navlinks a::after,html:not(.js) button[type=submit],
+    html:not(.js) .t-opt,html:not(.js) .repo,html:not(.js) .repo .go i{transition:none}
+    html:not(.js) .tk-in{animation:none}
+    html:not(.js) .cue-line::after{animation:none; top:30%}
   }
 </style>
 </head>
@@ -824,6 +884,7 @@
         <a href="#offer">Offer</a>
         <a href="#contact">Contact</a>
       </div>
+      <button class="mc-head" id="motionHead" type="button" title="Your system prefers reduced motion &mdash; enable the full experience">Enable motion <span aria-hidden="true">&#9654;</span></button>
       <button class="khint" id="palHint" type="button" aria-label="Open command palette (Ctrl+K or Cmd+K)">&#8984;K</button>
       <button class="toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="Switch theme">
         <span class="t-opt t-lt">Paper</span><span class="t-opt t-dk">Instrument</span>
@@ -849,11 +910,17 @@
     </div>
     <div class="hero-foot fx fx5">
       <div class="wrap">
-        <p class="nn-cap">
-          <span class="lt">Plate 00 — </span><span class="dk">live_demo / </span><b>the network that learns you.</b>
-          <span class="live">A real neural network — not a video. It is learning your cursor right now: forward passes and SGD weight updates, live in this browser, predicting 300&nbsp;ms ahead. Move to stir the field; click open canvas to inject data and briefly double the training rate.</span>
-          <span class="rm">A real neural network backs this hero. Your system prefers reduced motion, so it is shown as a single static forward pass — nothing animates or trains.</span>
-        </p>
+        <div class="capcol">
+          <div class="motion-chip">
+            <button class="mc-btn" id="motionHero" type="button" aria-describedby="mcNote">Enable motion <span aria-hidden="true">&#9654;</span></button>
+            <span class="mc-note" id="mcNote">Your system prefers reduced motion — the full experience is one click away.</span>
+          </div>
+          <p class="nn-cap">
+            <span class="lt">Plate 00 — </span><span class="dk">live_demo / </span><b>the network that learns you.</b>
+            <span class="live">A real neural network — not a video. It is learning your cursor right now: forward passes and SGD weight updates, live in this browser, predicting 300&nbsp;ms ahead. Move to stir the field; click open canvas to inject data and briefly double the training rate.</span>
+            <span class="rm">A real neural network backs this hero, shown as a single static forward pass — no animation or training. <span class="mc-ref-c">Enable motion above to see it live.</span><span class="mc-ref-p">Enable motion from the &#8984;K palette to see it live.</span></span>
+          </p>
+        </div>
         <div class="hud" role="group" aria-label="Live neural network readout">
           <div class="hud-hd"><span><span class="lt">Live from this page</span><span class="dk">nn.live</span></span><span class="hud-dot" aria-hidden="true">&#9679;</span></div>
           <dl>
@@ -1135,6 +1202,7 @@
       <li><a href="#contact" data-act="goto">Go to Contact<span class="pal-k">section</span></a></li>
       <li><a href="#top" data-act="goto">Back to top<span class="pal-k">section</span></a></li>
       <li><button type="button" data-act="theme">Switch theme — Paper &#8646; Instrument<span class="pal-k">action</span></button></li>
+      <li><button type="button" data-act="motion" id="palMotion">Reduce motion — switch to the static experience<span class="pal-k">action</span></button></li>
       <li><button type="button" data-act="nnreset">Reset the network — re-initialize weights<span class="pal-k">action</span></button></li>
       <li><button type="button" data-act="copy">Copy site URL<span class="pal-k">action</span></button></li>
       <li><a href="https://github.com/ssh071102-code/grounded-chat" target="_blank" rel="noopener" data-act="repo">Open grounded-chat<span class="pal-k">repo</span></a></li>
@@ -1150,9 +1218,28 @@
 <script>
   (function () {
     var doc = document.documentElement;
+    /* the pre-paint script resolved OS preference + stored override into
+       one root class; every motion decision reads that single verdict */
     var reduced = function () {
-      return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      return doc.classList.contains('rm-static');
     };
+
+    /* ---------- motion opt-in / opt-out (a clean reload applies it) ---------- */
+    function setMotion(v) {
+      try { localStorage.setItem('motion', v); } catch (e) {}
+      location.reload();
+    }
+    function motionOptIn() { setMotion('on'); }
+    var mHero = document.getElementById('motionHero');
+    var mHead = document.getElementById('motionHead');
+    if (mHero) mHero.addEventListener('click', motionOptIn);
+    if (mHead) mHead.addEventListener('click', motionOptIn);
+    var palMotion = document.getElementById('palMotion');
+    if (palMotion) {
+      palMotion.firstChild.textContent = reduced()
+        ? 'Enable motion — switch to the full experience'
+        : 'Reduce motion — switch to the static experience';
+    }
 
     /* ---------- breathing text: editorial lines surface at reading pace ----------
        Splits a paragraph's own text nodes into word spans (same characters,
@@ -1364,6 +1451,12 @@
         setTheme(doc.getAttribute('data-theme') === 'dark' ? 'light' : 'dark', true);
         return;
       }
+      if (a === 'motion') {
+        e.preventDefault();
+        closePal();
+        setMotion(reduced() ? 'on' : 'off');
+        return;
+      }
       if (a === 'nnreset') {
         closePal();
         if (window.__nn) window.__nn.reset();
@@ -1391,9 +1484,11 @@
   if (!ctx) return;
   var stage = document.getElementById('nnStage');
   var hero = stage.parentNode;
-  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* single motion verdict from the pre-paint script: OS preference plus
+     the visitor's stored override (the ENABLE MOTION / REDUCE MOTION switch) */
+  var reduced = document.documentElement.classList.contains('rm-static');
   /* journey mode: fixed full-page canvas choreographed by scroll.
-     Reduced motion keeps today's static hero plate instead. */
+     Static mode keeps today's static hero plate instead. */
   var jn = !reduced;
   if (jn) document.documentElement.classList.add('jn');
 
